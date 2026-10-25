@@ -58,6 +58,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 /* ---------------- sidebar: workspace + page tree ---------------- */
 .nav { display: flex; flex-direction: column; min-height: 0; background: var(--nav); box-shadow: inset -1px 0 0 var(--line-2); }
+.logo { margin: 12px 16px 0; font-size: 17px; letter-spacing: -.02em; line-height: 24px; color: var(--ink); user-select: none; }
+.logo b { font-weight: 800; color: var(--link); }
+.logo span { font-weight: 400; }
 .workspace { display: flex; align-items: center; gap: 10px; margin: 8px 8px 4px; padding: 6px 8px; border-radius: 6px; min-width: 0; }
 .workspace:hover { background: var(--hover); }
 .workspace b { display: block; font-weight: 600; font-size: 15px; line-height: 20px; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -268,6 +271,7 @@ body.zen .page { padding: 0; }
 <body>
 <div class="app">
   <aside class="nav" aria-label="Flows">
+    <div class="logo" aria-label="VibeSequence"><b>Vibe</b><span>Sequence</span></div>
     <div class="workspace" title="__STATS__">
       <span class="avatar" id="avatar"></span>
       <span style="min-width:0"><b>__PROJECT__</b><small>__STATS__</small></span>
