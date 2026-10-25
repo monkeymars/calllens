@@ -2,3 +2,4 @@ vibesequence-out/
 __pycache__/
 *.egg-info/
 .DS_Store
+demo/videos/
