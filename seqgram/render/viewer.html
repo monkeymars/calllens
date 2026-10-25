@@ -1,0 +1,1175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>seqgram — __PROJECT__</title>
+<script>
+  try { var t = (JSON.parse(localStorage.getItem('seqgram.layout')) || {}).theme; } catch (e) {}
+  document.documentElement.dataset.theme = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+</script>
+<style>
+/* Notion-like: a flow is a page in a docs workspace. System fonts only, so it works offline. */
+:root {
+  --bg: #FFFFFF; --nav: #F7F7F5;
+  --surface: #FFFFFF; --surface-2: #F1F1EF;
+  --ink: #37352F; --muted: #787774; --faint: #9B9A97;
+  --line: rgba(55,53,47,.16); --line-2: rgba(55,53,47,.09);
+  --hover: rgba(55,53,47,.06); --active: rgba(55,53,47,.1);
+  --link: #2383E2; --link-soft: #E7F3F8;
+  --note: #FBF3DB; --note-line: #E9D7A5;
+  --green: #448361; --green-soft: #EDF3EC;
+  --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif;
+  --mono: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  --pop: rgba(15,15,15,.05) 0 0 0 1px, rgba(15,15,15,.1) 0 3px 6px, rgba(15,15,15,.2) 0 9px 24px;
+  color-scheme: light;
+  --avatar: #37352F; --avatar-ink: #fff; --err: #FDEBEC; --err-ink: #5D1715;
+  --tag: #E3E2E0; --tag-ink: #32302C;
+  --tag-green: #DBEDDB; --tag-green-ink: #1C3829; --tag-blue: #D3E5EF; --tag-blue-ink: #183347;
+  --tag-yellow: #FBF3DB; --tag-yellow-ink: #402C1B; --tag-red: #FFE2DD; --tag-red-ink: #5D1715;
+  --tag-orange: #FADEC9; --tag-orange-ink: #49290E;
+}
+:root[data-theme="dark"] {
+  --bg: #191919; --nav: #202020;
+  --surface: #191919; --surface-2: #2A2A2A;
+  --ink: #D4D4D4; --muted: #9B9B9B; --faint: #6F6F6F;
+  --line: rgba(255,255,255,.16); --line-2: rgba(255,255,255,.094);
+  --hover: rgba(255,255,255,.055); --active: rgba(255,255,255,.09);
+  --link: #529CCA; --link-soft: #1E3346;
+  --note: #3F3A26; --note-line: #6B5F2E;
+  --green: #4F9768; --green-soft: #1F2E25;
+  --pop: rgba(15,15,15,.1) 0 0 0 1px, rgba(15,15,15,.2) 0 3px 6px, rgba(15,15,15,.4) 0 9px 24px;
+  --avatar: #D4D4D4; --avatar-ink: #191919; --err: #3B2521; --err-ink: #F4C7C2;
+  --tag: #373737; --tag-ink: #D4D4D4;
+  --tag-green: #2B593F; --tag-green-ink: #DCEFE3; --tag-blue: #28456C; --tag-blue-ink: #DCE8F5;
+  --tag-yellow: #89632A; --tag-yellow-ink: #F7EBD6; --tag-red: #6E3630; --tag-red-ink: #F9DEDA;
+  --tag-orange: #854C1D; --tag-orange-ink: #F9E3D2;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { --nav-w: 248px; margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased;
+       padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid rgba(35,131,226,.57); outline-offset: 1px; border-radius: 4px; }
+.mono { font-family: var(--mono); font-size: 12.5px; }
+
+.app { display: grid; grid-template-columns: var(--nav-w) 0 1fr; height: 100%; }
+
+/* ---------------- sidebar: workspace + page tree ---------------- */
+.nav { display: flex; flex-direction: column; min-height: 0; background: var(--nav); box-shadow: inset -1px 0 0 var(--line-2); }
+.workspace { display: flex; align-items: center; gap: 8px; margin: 6px 8px 2px; padding: 6px 8px; border-radius: 6px; min-width: 0; }
+.workspace b { display: block; font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.workspace small { display: block; color: var(--muted); font-size: 12px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.avatar { display: grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 4px; background: var(--avatar); color: var(--avatar-ink); font-size: 11px; font-weight: 600; }
+.search { display: flex; align-items: center; gap: 8px; margin: 2px 8px 6px; padding: 0 8px; height: 30px; border-radius: 6px; color: var(--muted); }
+.search:hover, .search:focus-within { background: var(--hover); }
+.search svg { flex: none; fill: currentColor; }
+.search input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; color: var(--ink); font: 14px var(--font); outline: none; }
+.search input::placeholder { color: var(--muted); }
+#flowlist { flex: 1; overflow: auto; padding: 0 8px 16px; }
+.group { margin-top: 10px; }
+.group summary { display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer; list-style: none; user-select: none; }
+.group summary::-webkit-details-marker { display: none; }
+.group summary::before { content: ""; width: 0; height: 0; border-left: 4px solid currentColor; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent; margin: 0 4px 0 2px; transition: transform .12s; }
+.group[open] summary::before { transform: rotate(90deg); }
+.group summary:hover { background: var(--hover); }
+.flow { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 28px; padding: 2px 8px 2px 10px; border-radius: 6px; text-align: left; color: var(--ink); }
+.flow:hover { background: var(--hover); }
+.flow[aria-current="true"] { background: var(--active); font-weight: 600; }
+.flow .label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty { padding: 12px 10px; color: var(--muted); }
+
+/* Notion select-tag colors */
+.badge { display: inline-flex; align-items: center; flex: none; height: 20px; padding: 0 6px; border-radius: 3px; font-size: 12px; line-height: 20px; font-weight: 500;
+         background: var(--tag); color: var(--tag-ink); white-space: nowrap; }
+.flow .badge { height: 18px; line-height: 18px; min-width: 44px; justify-content: center; font-size: 11px; }
+.tone-success { background: var(--tag-green); color: var(--tag-green-ink); }
+.tone-info { background: var(--tag-blue); color: var(--tag-blue-ink); }
+.tone-attention { background: var(--tag-yellow); color: var(--tag-yellow-ink); }
+.tone-critical { background: var(--tag-red); color: var(--tag-red-ink); }
+.tone-warning { background: var(--tag-orange); color: var(--tag-orange-ink); }
+
+/* resize handle on the sidebar edge */
+.resizer { position: relative; z-index: 2; }
+.resizer::after { content: ""; position: absolute; inset: 0 -4px; cursor: col-resize; }
+.resizer:hover::after, .resizer.dragging::after { background: linear-gradient(90deg, transparent 3px, rgba(35,131,226,.6) 3px 5px, transparent 5px); }
+body.resizing { cursor: col-resize; user-select: none; }
+body.nav-collapsed .app { grid-template-columns: 1fr; }        /* hidden nav/resizer take no grid cell */
+body.nav-collapsed .nav, body.nav-collapsed .resizer { display: none; }
+
+/* ---------------- top bar: breadcrumb + page actions ---------------- */
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.topbar { display: flex; align-items: center; gap: 4px; height: 45px; padding: 0 12px; flex: none; }
+.navtoggle { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; color: var(--muted); flex: none; }
+.navtoggle:hover { background: var(--hover); }
+.crumbs { display: flex; align-items: center; gap: 2px; min-width: 0; flex: 1; white-space: nowrap; overflow: hidden; font-size: 14px; }
+.crumbs button, .crumbs .here { padding: 2px 6px; border-radius: 4px; overflow: hidden; text-overflow: ellipsis; }
+.crumbs button { color: var(--muted); }
+.crumbs button:hover { background: var(--hover); color: var(--ink); }
+.crumbs .sep { color: var(--faint); }
+.actions { display: inline-flex; gap: 2px; flex: none; }
+.btn { display: inline-flex; align-items: center; height: 28px; padding: 0 8px; border-radius: 6px; font-size: 14px; color: var(--ink); white-space: nowrap; }
+.btn:hover { background: var(--hover); }
+.btn svg { flex: none; margin-right: 6px; color: var(--muted); }
+.btn:hover svg { color: var(--ink); }
+.themetoggle svg { display: block; }
+:root[data-theme="dark"] .themetoggle .moon, :root:not([data-theme="dark"]) .themetoggle .sun { display: none; }
+
+/* ---------------- the page ---------------- */
+.page { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; padding: 20px clamp(24px, 6vw, 96px) 24px; }
+.doc-head { flex: none; }
+.doc-head h1 { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font: 700 28px/1.2 var(--font); letter-spacing: -.02em; overflow-wrap: anywhere; }
+.doc-head .icon { flex: none; display: grid; color: var(--muted); }
+.doc-head .icon svg { width: 26px; height: 26px; }
+/* two property columns: k v | k v, so extra detail costs no extra height */
+.props { display: grid; grid-template-columns: 130px minmax(0, 1fr) 130px minmax(0, 1fr); row-gap: 0; column-gap: 8px; margin-bottom: 10px; font-size: 13.5px; }
+.props .k, .props .v { display: flex; align-items: center; min-height: 26px; padding: 0 6px; border-radius: 4px; min-width: 0; }
+.props .k { gap: 6px; color: var(--muted); }
+.props .k svg { fill: var(--faint); flex: none; }
+.props .v { gap: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; display: block; line-height: 26px; }
+.props .v .badge { vertical-align: 1px; margin-right: 4px; }
+.props .v .sub { color: var(--muted); }
+.srclink { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+.srclink:hover { color: var(--link); border-bottom-color: var(--link); }
+.props .v.src { display: flex; align-items: center; overflow: visible; }
+.props .v.src .srclink { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.srcstatus { margin-left: 8px; color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+.lede { margin: 0 0 14px; padding: 10px 0 0 6px; border-top: 1px solid var(--line-2); }   /* 6px lines up with the property column */
+.lede b { font-weight: 600; }
+.changes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 10px; padding: 5px 6px 5px 12px; border-radius: 6px;
+           background: var(--green-soft); font-size: 13.5px; }
+.changes[hidden] { display: none; }
+.changes b { color: var(--green); font-weight: 600; }
+.changes .muted { color: var(--muted); }
+.changes .btn { height: 26px; font-size: 13px; }
+.changes .btn:first-of-type { margin-left: auto; }
+.flow .where { flex: none; margin-left: auto; color: var(--faint); font-size: 12px; }
+.flow .where + .chg { margin-left: 6px; }
+.morebtn { width: 100%; min-height: 26px; padding: 2px 10px; border-radius: 6px; text-align: left; color: var(--muted); font-size: 13px; }
+.morebtn:hover { background: var(--hover); color: var(--ink); }
+.flow .chg { flex: none; width: 7px; height: 7px; margin-left: auto; border-radius: 50%; background: var(--green); }
+.live { display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+.live[hidden] { display: none; }
+.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+.live.flash::before { animation: pulse .5s ease-in-out 3; }
+@keyframes pulse { 50% { transform: scale(1.8); opacity: .5; } }
+
+/* view tabs (like database views) + inline controls */
+.views { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 4px 16px; border-bottom: 1px solid var(--line-2); flex: none; }
+.tabs { display: inline-flex; gap: 2px; }
+.tabs button { position: relative; padding: 8px 8px 9px; color: var(--muted); text-transform: capitalize; border-radius: 6px 6px 0 0; }
+.tabs button:hover { color: var(--ink); background: var(--hover); }
+.tabs button[aria-pressed="true"] { color: var(--ink); font-weight: 500; }
+.tabs button[aria-pressed="true"]::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: -1px; height: 2px; background: var(--ink); border-radius: 1px; }
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: auto; padding-bottom: 5px; }
+.ctl { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--muted); font-size: 14px; }
+.ctl:hover { background: var(--hover); }
+.ctl select, .ctl input[type=number] { border: 0; background: none; color: var(--ink); font: 14px var(--font); padding: 0; outline: none; }
+.ctl input[type=number] { width: 34px; }
+/* (i) next to "Depth": 24px hit area, small glyph; hover to peek, click to pin */
+.info { display: grid; place-items: center; width: 24px; height: 24px; margin: 0 -2px 0 -4px; border-radius: 50%; color: var(--faint); }
+.info:hover, .info:focus-visible, .info[aria-expanded="true"] { color: var(--link); background: var(--hover); }
+.infopop { position: fixed; inset: auto; margin: 0; width: 320px; padding: 12px; border: 0; border-radius: 10px; overflow: visible;
+           background: var(--surface); color: var(--ink); box-shadow: var(--pop); font-size: 13px; line-height: 1.45; }
+.infopop::before { content: ""; position: absolute; top: -5px; left: calc(var(--caret-x, 50%) - 5px); width: 10px; height: 10px;
+                   background: var(--surface); transform: rotate(45deg); box-shadow: -1px -1px 0 rgba(15,15,15,.07); }
+.infopop.above::before { top: auto; bottom: -5px; box-shadow: 1px 1px 0 rgba(15,15,15,.07); }
+@media (prefers-reduced-motion: no-preference) { .infopop:popover-open { animation: popin .12s ease-out; } }
+@keyframes popin { from { opacity: 0; transform: translateY(-4px); } }
+.ip-head { margin-bottom: 8px; color: var(--muted); }
+.ip-head b { color: var(--ink); font-weight: 600; }
+.ip-levels { display: flex; flex-direction: column; gap: 2px; margin: 0 -4px; }
+.ip-levels button { display: flex; align-items: flex-start; gap: 10px; padding: 6px 8px; border-radius: 6px; text-align: left; }
+.ip-levels button:hover, .ip-levels button:focus-visible { background: var(--hover); outline: none; }
+.ip-levels button[aria-pressed="true"] { background: var(--link-soft); }
+.ip-levels .n { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: var(--surface-2);
+                color: var(--muted); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ip-levels button[aria-pressed="true"] .n { background: var(--link); color: #fff; }
+.ip-levels .t { display: flex; flex-direction: column; }
+.ip-levels .ex { color: var(--muted); font-size: 12px; }
+.ip-tip { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--line-2); color: var(--muted); }
+.ip-tip b { color: var(--ink); }
+.ip-now { margin: 6px 0 0; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.ip-now:empty { display: none; }
+.ctl input[type=checkbox] { width: 14px; height: 14px; margin: 0; accent-color: var(--link); }
+
+/* the diagram as a figure */
+.figure { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 420px; margin: 0; }
+.stage { position: relative; display: flex; flex: 1; min-height: 0; }
+/* flex + margin:auto centres the diagram while it fits and never clips it once it is bigger */
+.canvas { display: flex; flex: 1; min-height: 0; overflow: auto; padding: 24px 8px 64px; cursor: grab; }   /* 64px: last arrow can scroll above the player bar */
+.canvas.panning { cursor: grabbing; user-select: none; }
+#diagram { flex: none; margin: auto; }
+#diagram svg { display: block; height: auto; }
+.stickyhead { position: absolute; top: 0; left: 0; right: 0; z-index: 1; overflow: hidden; pointer-events: none;
+              background: var(--bg); box-shadow: 0 1px 0 var(--line-2), 0 6px 10px -8px rgba(0,0,0,.25); }
+/* player: walks the flow one arrow at a time */
+.player { position: absolute; left: 8px; bottom: 8px; z-index: 2; display: flex; align-items: center; gap: 2px; max-width: calc(100% - 300px);
+          padding: 3px; border-radius: 8px; background: var(--surface); box-shadow: var(--pop); }
+.player[hidden] { display: none; }
+.player .btn { height: 26px; min-width: 26px; justify-content: center; font-size: 13px; }
+.player .btn:disabled { opacity: .35; pointer-events: none; }
+.player #playBtn svg { margin-right: 4px; fill: currentColor; color: var(--link); }
+.player .count { padding: 0 4px; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.player .caption { min-width: 0; padding: 0 8px 0 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; border-left: 1px solid var(--line-2); }
+.player .caption:empty { display: none; }
+.player .caption b { font-weight: 600; }
+.player .caption .muted { color: var(--muted); }
+#diagram.playing .future { opacity: .18; }
+/* steps added since the baseline (live mode); .current below wins while playing */
+#diagram .messageLine0.added, #diagram .messageLine1.added { stroke: var(--green) !important; stroke-width: 2px !important; }
+#diagram .messageText.added { fill: var(--green) !important; font-weight: 600; }
+#diagram .messageLine0.current, #diagram .messageLine1.current { stroke: var(--link) !important; stroke-width: 2.5px !important; stroke-dasharray: 7 5; animation: march .45s linear infinite; }
+#diagram .messageText.current { fill: var(--link) !important; font-weight: 600; }
+.lane-active, rect.lane-active, .user-actor.lane-active rect { stroke: var(--link) !important; stroke-width: 2px !important; }
+@keyframes march { to { stroke-dashoffset: -12; } }
+@media (prefers-reduced-motion: reduce) { #diagram .current { animation: none !important; } }
+@media (max-width: 760px) { .player { max-width: calc(100% - 16px); bottom: 48px; } }
+.zoombar { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 2px; padding: 3px; border-radius: 8px; background: var(--surface); box-shadow: var(--pop); }
+.zoombar .btn { height: 26px; min-width: 26px; justify-content: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.zoombar .btn[aria-pressed="true"] { background: var(--active); }
+.legend { display: flex; flex-wrap: wrap; gap: 2px 14px; padding: 8px 2px 0; border-top: 1px solid var(--line-2); color: var(--muted); font-size: 12px; flex: none; }
+.legend b { font-weight: 500; color: var(--ink); }
+.legend .sw { display: inline-block; width: 14px; height: 2px; margin-right: 6px; vertical-align: middle; border-radius: 1px; }
+kbd { font: 11px var(--mono); padding: 0 4px; border-radius: 3px; background: var(--surface-2); box-shadow: inset 0 -1px 0 var(--line); }
+.err { padding: 12px 16px; border-radius: 6px; background: var(--err); color: var(--err-ink); white-space: pre-wrap; font-family: var(--mono); font-size: 12px; }
+
+/* mermaid touches: rounded actors, zoomable calls read as links */
+rect.actor { rx: 6px; ry: 6px; }                      /* also styles the sticky clone */
+/* the User actor: a participant-sized box with a person icon instead of mermaid's stick figure */
+.user-actor rect { fill: var(--link-soft); stroke: var(--link); stroke-width: 1px; }
+.user-actor path { fill: var(--link); }
+.user-actor text { fill: var(--ink); }
+.messageText { cursor: default; }
+.messageText.zoomable { cursor: zoom-in; fill: var(--link) !important; font-weight: 500; }
+.messageText.zoomable:hover { text-decoration: underline; }
+.messageText.leaf { fill: var(--ink) !important; }
+.messageText.external { fill: var(--faint) !important; }
+
+/* zen mode: only the figure */
+body.zen .nav, body.zen .resizer, body.zen .topbar, body.zen .doc-head, body.zen .views, body.zen .legend { display: none; }
+body.zen .app { grid-template-columns: 1fr; }
+body.zen .page { padding: 0; }
+
+@media (max-width: 760px) {
+  .app, body.nav-collapsed .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .nav { max-height: 34vh; box-shadow: inset 0 -1px 0 var(--line-2); } .resizer { display: none; }
+  .props { grid-template-columns: 110px minmax(0, 1fr); } .page { padding: 20px 16px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .flow, .tabs button, .btn, .ctl, .crumbs button { transition: background-color .1s, color .1s; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="nav" aria-label="Flows">
+    <div class="workspace" title="__STATS__">
+      <span class="avatar" id="avatar"></span>
+      <span style="min-width:0"><b>__PROJECT__</b><small>__STATS__</small></span>
+    </div>
+    <label class="search">
+      <svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M8.5 3a5.5 5.5 0 0 1 4.38 8.82l3.65 3.65a.75.75 0 1 1-1.06 1.06l-3.65-3.65A5.5 5.5 0 1 1 8.5 3Zm0 1.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/></svg>
+      <input id="q" type="search" placeholder="Search" aria-label="Search flows">
+    </label>
+    <nav id="flowlist"></nav>
+  </aside>
+  <div class="resizer" id="resizer" role="separator" aria-orientation="vertical" aria-label="Resize sidebar" title="Drag to resize · double-click to reset"></div>
+  <div class="main">
+    <header class="topbar">
+      <button class="navtoggle" id="navToggle" aria-label="Toggle sidebar" aria-expanded="true" title="Toggle sidebar (\)">
+        <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M8 4v12"/></svg>
+      </button>
+      <div class="crumbs" id="crumbs" aria-label="Zoom path"></div>
+      <div class="actions">
+        <span class="live" id="live" hidden title="Updates by itself when the code changes (seqgram serve)">Live</span>
+        <button class="navtoggle themetoggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode (D)">
+          <svg class="moon" width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" fill="currentColor"><path d="M8.2 3.1A7 7 0 1 0 16.9 11.8 5.6 5.6 0 0 1 8.2 3.1Z"/></svg>
+          <svg class="sun" width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="3.2"/><path d="M10 2.5v1.8M10 15.7v1.8M2.5 10h1.8M15.7 10h1.8M4.7 4.7l1.3 1.3M14 14l1.3 1.3M4.7 15.3 6 14M14 6l1.3-1.3"/></svg>
+        </button>
+        <button class="btn" id="copy" title="Copy this diagram as Mermaid text">
+          <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M13 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/></svg><span>Mermaid</span>
+        </button>
+        <button class="btn" id="copyPrompt" title="Copy this diagram inside a ready-to-paste prompt for your AI assistant">
+          <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" fill="currentColor"><path d="M8 2.5l1.4 3.8 3.8 1.4-3.8 1.4L8 12.9 6.6 9.1 2.8 7.7l3.8-1.4L8 2.5Zm7 8.5.8 2.2 2.2.8-2.2.8L15 17l-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg><span>AI prompt</span>
+        </button>
+      </div>
+    </header>
+    <main class="page">
+      <div class="doc-head">
+        <h1><span class="icon" id="icon" aria-hidden="true"></span><span id="title">Flows</span></h1>
+        <div class="props">
+          <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4h5l7 7-5 5-7-7V4Zm3 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"/></svg>Type</div><div class="v" id="kind"></div>
+          <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M7.7 5.3 3 10l4.7 4.7 1.06-1.06L5.12 10l3.64-3.64L7.7 5.3Zm4.6 0-1.06 1.06L14.88 10l-3.64 3.64 1.06 1.06L17 10l-4.7-4.7Z"/></svg>Source</div><div class="v src"><a class="mono srclink" id="source"></a><span class="srcstatus" id="srcStatus" role="status"></span></div>
+          <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v1.5H4V5Zm0 4.25h12v1.5H4v-1.5ZM4 13.5h8V15H4v-1.5Z"/></svg>Steps</div><div class="v" id="count"></div>
+          <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 9.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6.5 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM2 16c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5v.5H2V16Zm11.2.5c0-1.6-.6-3-1.6-4 .6-.3 1.2-.5 1.9-.5 2.3 0 4 1.7 4 3.9v.6h-4.3Z"/></svg>Participants</div><div class="v" id="parts"></div>
+          <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 0 3.5 13.07l-.75-1.3A5.5 5.5 0 1 1 15.5 10v.75a1.25 1.25 0 0 1-2.5 0V7h-1.4v.6A3.25 3.25 0 1 0 12 12.4a2.75 2.75 0 0 0 5-1.65V10A7 7 0 0 0 10 3Zm0 8.75a1.75 1.75 0 1 1 0-3.5 1.75 1.75 0 0 1 0 3.5Z"/></svg>Defined as</div><div class="v mono" id="defn"></div>
+          <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 9.25h9.19l-3.72-3.72 1.06-1.06L16.06 10l-5.53 5.53-1.06-1.06 3.72-3.72H4v-1.5Z"/></svg>Calls</div><div class="v" id="calls"></div>
+        </div>
+        <p class="lede" id="lede">Pick a flow from the sidebar to read its steps.</p>
+        <div class="changes" id="changes" role="status" hidden>
+          <span id="changesText"></span>
+          <button class="btn" id="playChanges" title="Play only the steps that changed">▶ Play changes</button>
+          <button class="btn" id="markSeen" title="Measure changes from now on">Mark as seen</button>
+        </div>
+      </div>
+      <div class="views">
+        <div class="tabs" id="ladder" role="group" aria-label="Participant level">
+          <button data-level="package">package</button>
+          <button data-level="module">module</button>
+          <button data-level="class" aria-pressed="true">class</button>
+          <button data-level="function">function</button>
+        </div>
+        <div class="filters">
+          <span class="ctl"><label for="depth">Depth</label>
+            <button class="info" id="depthInfoBtn" aria-label="What does depth mean?" aria-expanded="false" aria-controls="depthInfo">
+              <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 9.2v4.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="6.4" r="1.05" fill="currentColor"/></svg>
+            </button>
+            <input id="depth" type="number" min="1" max="12" value="2"></span>
+          <div class="infopop" id="depthInfo" popover="manual" role="dialog" aria-labelledby="depthInfoTitle">
+            <div class="ip-head"><b id="depthInfoTitle">Depth</b> · how far down the calls go</div>
+            <div class="ip-levels" role="group" aria-label="Pick a depth">
+              <button data-depth="1"><span class="n">1</span><span class="t">Only what this flow calls<span class="ex">route → service</span></span></button>
+              <button data-depth="2"><span class="n">2</span><span class="t">Plus what those calls do<span class="ex">service → repos, payment</span></span></button>
+              <button data-depth="3"><span class="n">3</span><span class="t">Down to database and HTTP<span class="ex">repo → db, fetch</span></span></button>
+              <button data-depth="4"><span class="n">4+</span><span class="t">Everything below<span class="ex">wide diagram: zoom out or use Fit</span></span></button>
+            </div>
+            <p class="ip-tip"><b>…</b> after a step means there is more below it. Raise depth, or click the blue step to open it on its own.</p>
+            <p class="ip-now" id="depthNow"></p>
+          </div>
+          <label class="ctl">Externals
+            <select id="ext">
+              <option value="none">None</option>
+              <option value="lib" selected>Libraries</option>
+              <option value="global">+ Globals</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+          <label class="ctl"><input id="returns" type="checkbox" checked> Returns</label>
+        </div>
+      </div>
+      <figure class="figure" aria-label="Sequence diagram">
+        <div class="stage">
+          <div class="canvas" id="canvas"><div id="diagram"></div></div>
+          <div class="stickyhead" id="stickyhead" hidden aria-hidden="true"></div>
+          <div class="player" id="player" role="group" aria-label="Play the flow" hidden>
+            <button class="btn" id="playBtn" title="Play the flow step by step (Space)"></button>
+            <button class="btn" id="prevStep" aria-label="Previous step" title="Previous step (←)">‹</button>
+            <span class="count" id="stepCount"></span>
+            <button class="btn" id="nextStep" aria-label="Next step" title="Next step (→)">›</button>
+            <button class="btn" id="speedBtn" title="Playback speed"></button>
+            <span class="caption" id="stepCaption" aria-live="polite"></span>
+          </div>
+          <div class="zoombar" role="group" aria-label="Zoom">
+            <button class="btn" id="zoomOut" aria-label="Zoom out" title="Zoom out (−)">−</button>
+            <button class="btn" id="zoomPct" title="Reset to 100%">100%</button>
+            <button class="btn" id="zoomIn" aria-label="Zoom in" title="Zoom in (+)">+</button>
+            <button class="btn" id="zoomFit" title="Fit to width (0)" aria-pressed="true">Fit</button>
+            <button class="btn" id="zenToggle" title="Zen mode: canvas only (Z, Esc to exit)" aria-pressed="false">Zen</button>
+          </div>
+        </div>
+        <figcaption class="legend">
+          <span><span class="sw" style="background:var(--link)"></span><b>Blue</b> calls zoom in on click</span>
+          <span><span class="sw" style="background:var(--faint)"></span>grey = library / object</span>
+          <span>… deeper than depth · ↺ recursion · ×n repeated</span>
+          <span><kbd>⌘</kbd>+scroll zoom · drag to pan · <kbd>Space</kbd> play · <kbd>←</kbd> <kbd>→</kbd> step · <kbd>Z</kbd> zen · <kbd>D</kbd> dark · <kbd>\</kbd> sidebar · <kbd>[</kbd> <kbd>]</kbd> level</span>
+        </figcaption>
+      </figure>
+    </main>
+  </div>
+</div>
+
+<script id="graph" type="application/json">__GRAPH_JSON__</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+/* ===================================================================
+   JavaScript port of seqgram/flow.py + render/mermaid.py.
+   Same algorithm, so what the CLI prints for the AI assistant is what
+   you see here. Keep the two in sync.
+   =================================================================== */
+const G = JSON.parse(document.getElementById('graph').textContent);
+const LEVELS = ['package', 'module', 'class', 'function'];
+const EXT_MODES = ['none', 'lib', 'global', 'all'];
+
+// ---- expand: call graph -> call tree -------------------------------
+const ownCls = fn => fn.cls ? fn.module + ':' + fn.cls : null;
+function expand(rootId, maxDepth) {
+  const fns = G.functions;
+  function rec(fid, depth, path, selfCls) {
+    const fn = fns[fid];
+    const node = { callee: fid, line: fn.line, context: [], children: [], truncated: null, receiver: null, extKind: null };
+    if (depth >= maxDepth) { node.truncated = 'depth'; return node; }
+    for (const call of fn.calls) {
+      let child;
+      if (call.resolved && fns[call.resolved]) {
+        const target = fns[call.resolved];
+        const viaSelf = call.expr.startsWith('self.') && call.expr.split('.').length === 2;
+        const receiver = (viaSelf && selfCls && ownCls(target) !== selfCls) ? selfCls : call.receiver;
+        const childSelf = receiver || ownCls(target);
+        if (path.has(call.resolved) || call.resolved === fid) {
+          child = { callee: call.resolved, line: call.line, context: call.context, children: [], truncated: 'cycle', receiver: null, extKind: null };
+        } else {
+          const p = new Set(path); p.add(fid);
+          child = rec(call.resolved, depth + 1, p, childSelf);
+          child.line = call.line; child.context = call.context;
+        }
+        child.receiver = receiver;
+      } else {
+        child = { callee: 'ext:' + call.expr, line: call.line, context: call.context, children: [], truncated: null, receiver: null, extKind: call.ext_kind };
+      }
+      node.children.push(child);
+    }
+    return node;
+  }
+  return rec(rootId, 0, new Set(), ownCls(fns[rootId]));
+}
+
+// ---- zoom projection -------------------------------------------------
+function extSplit(expr) {
+  const parts = expr.replace(/\(\)/g, '').split('.');
+  if (parts[0] === 'self' && parts.length >= 3) return [parts[1], parts.slice(2).join('.')];
+  if (parts.length === 1) return [parts[0], parts[0]];
+  return [parts[0], parts.slice(1).join('.')];
+}
+function participantOf(callee, level, receiver) {
+  if (callee.startsWith('ext:')) return 'ext:' + extSplit(callee.slice(4))[0];
+  const fn = G.functions[callee];
+  const qual = fn.cls ? fn.cls + '.' + fn.name : fn.name;
+  if (level === 'function') return fn.module + ':' + qual;
+  if (level === 'class') return receiver ? receiver : (fn.cls ? fn.module + ':' + fn.cls : fn.module);
+  const mod = receiver ? receiver.split(':')[0] : fn.module;
+  if (level === 'module') return mod;
+  const i = mod.lastIndexOf('.');
+  return i > 0 ? mod.slice(0, i) : mod;
+}
+const GENERIC_FILES = new Set(['route', 'index', 'page', 'layout']);   // keep in sync with flow.py
+function shortModule(m) { const parts = m.split('.'); return parts.length > 1 && GENERIC_FILES.has(parts[parts.length - 1]) ? parts.slice(-2).join('/') : parts[parts.length - 1]; }
+function displayName(p, level) {
+  if (p.startsWith('ext:')) return p.slice(4);
+  const i = p.indexOf(':'), mod = i < 0 ? p : p.slice(0, i), qual = i < 0 ? undefined : p.slice(i + 1);
+  if (level === 'function') return qual;
+  if (level === 'class') return qual || shortModule(mod);
+  if (level === 'module') return shortModule(p);
+  return p;
+}
+function messageLabel(node, level) {
+  if (node.callee.startsWith('ext:')) return extSplit(node.callee.slice(4))[1];
+  const fn = G.functions[node.callee];
+  if (level === 'function' || level === 'class') return fn.name;
+  if (node.receiver) return node.receiver.split(':')[1] + '.' + fn.name;
+  return fn.cls ? fn.cls + '.' + fn.name : fn.name;
+}
+function collapse(msgs) {
+  const out = [];
+  for (const m of msgs) {
+    const prev = out[out.length - 1];
+    if (prev && !prev.children.length && !m.children.length && prev.src === m.src && prev.dst === m.dst
+        && prev.label === m.label && prev.context.join() === m.context.join()) prev.count++;
+    else out.push(m);
+  }
+  return out;
+}
+function project(root, level, externals, actor = 'User') {
+  const allowed = new Set(EXT_MODES.slice(1, EXT_MODES.indexOf(externals) + 1));
+  const isExt = n => n.callee.startsWith('ext:');
+  function rec(node, parent, inherited) {
+    const p = participantOf(node.callee, level, node.receiver);
+    const ctx = inherited.concat(node.context);
+    if (isExt(node) && !allowed.has(node.extKind || 'local')) return [];
+    if (p === parent) { let out = []; for (const ch of node.children) out = out.concat(rec(ch, p, ctx)); return out; }
+    const msg = { src: parent, dst: p, label: messageLabel(node, level), callee: node.callee, line: node.line,
+                  context: ctx, truncated: node.truncated, children: [], count: 1, external: isExt(node) };
+    for (const ch of node.children) msg.children = msg.children.concat(rec(ch, p, []));
+    msg.children = collapse(msg.children);
+    return [msg];
+  }
+  const rp = participantOf(root.callee, level, null);
+  const top = { src: actor, dst: rp, label: messageLabel(root, level), callee: root.callee, line: root.line,
+                context: [], truncated: root.truncated, children: [], count: 1, external: false };
+  for (const ch of root.children) top.children = top.children.concat(rec(ch, rp, []));
+  top.children = collapse(top.children);
+  return top;
+}
+
+// ---- mermaid text ----------------------------------------------------
+const FRAG = { loop: 'loop', if: 'alt', else: 'else', try: 'opt', except: 'opt', with: 'opt', finally: 'opt' };
+const FRAG_LABEL = { if: 'if', else: 'else', loop: 'for each', try: 'try', except: 'on error', with: 'with', finally: 'finally' };
+const esc = s => s.replace(/;/g, '#semi;').replace(/\n/g, ' ');
+const tagKind = t => t.split(':')[0];
+function fragLabel(tag) {
+  const i = tag.indexOf(':'); if (i < 0) return FRAG_LABEL[tag] || tag;
+  const kind = tag.slice(0, i), text = tag.slice(i + 1);
+  return kind === 'loop' ? text : (FRAG_LABEL[kind] || kind) + ' ' + text;
+}
+
+function renderMermaid(root, level, actor, showReturns, maxMessages = 150) {
+  const parts = new Map(); const alias = p => { if (!parts.has(p)) parts.set(p, 'p' + parts.size); return parts.get(p); };
+  const body = []; const order = []; let budget = maxMessages;
+  function emitMsg(m, ind) {
+    if (budget <= 0) return; budget--;
+    const a = alias(m.src), b = alias(m.dst);
+    let label = m.label + (m.count > 1 ? ' ×' + m.count : '');
+    if (m.truncated === 'cycle') label += ' ↺'; else if (m.truncated === 'depth') label += ' …';
+    body.push(`${ind}${a}->>${b}: ${esc(label)}`); order.push(m);
+    if (m.children.length) {
+      body.push(`${ind}activate ${b}`);
+      emitGroup(m.children, ind + '    ', 0);
+      if (showReturns) { body.push(`${ind}${b}-->>${a}: return`); order.push({ ret: m }); }
+      body.push(`${ind}deactivate ${b}`);
+    }
+  }
+  function lastBlockIsAlt(ind) {
+    if (!body.length || body[body.length - 1] !== ind + 'end') return false;
+    let d = 0;
+    for (let i = body.length - 1; i >= 0; i--) {
+      const s = body[i].trim(), kw = s.split(' ')[0];
+      if (s === 'end') d++;
+      else if (['alt', 'loop', 'opt', 'par', 'critical'].includes(kw)) { d--; if (d === 0) return kw === 'alt' && body[i].startsWith(ind + 'alt'); }
+    }
+    return false;
+  }
+  function emitGroup(msgs, ind, depth) {
+    let i = 0;
+    while (i < msgs.length) {
+      const m = msgs[i], tag = m.context.length > depth ? m.context[depth] : null;
+      if (tag === null) { emitMsg(m, ind); i++; continue; }
+      let j = i; while (j < msgs.length && msgs[j].context.length > depth && msgs[j].context[depth] === tag) j++;
+      const hasElse = j < msgs.length && msgs[j].context.length > depth && msgs[j].context[depth] === 'else';
+      let kind = FRAG[tagKind(tag)] || 'opt'; if (kind === 'alt' && !hasElse) kind = 'opt';
+      if (tag === 'else') { if (lastBlockIsAlt(ind)) { body.pop(); body.push(`${ind}else else`); } else body.push(`${ind}opt else`); }
+      else body.push(`${ind}${kind} ${esc(fragLabel(tag))}`);
+      emitGroup(msgs.slice(i, j), ind + '    ', depth + 1);
+      body.push(`${ind}end`); i = j;
+    }
+  }
+  alias(actor); emitMsg(root, '    ');
+  const lines = ['sequenceDiagram'];
+  for (const [p, al] of parts) lines.push(`    ${p === actor ? 'actor' : 'participant'} ${al} as ${esc(p === actor ? actor : displayName(p, level)).replace(/:/g, '.')}`);
+  lines.push(...body);
+  if (budget <= 0) lines.push(`    Note over ${parts.get(actor)}: truncated at ${maxMessages} messages, zoom in for more`);
+  return { text: lines.join('\n'), order, aliases: parts };
+}
+const countMessages = m => 1 + m.children.reduce((n, c) => n + countMessages(c), 0);
+
+
+// ---- UI state ---------------------------------------------------------
+const state = { path: [], level: 'class', depth: 2, externals: 'lib', returns: true, zoom: 'fit', scale: 1, lastMermaid: '' };
+const $ = id => document.getElementById(id);
+const KIND_TITLE = { route: 'HTTP routes', cli: 'Commands', handler: 'Handlers', main: 'Main', root: 'Other entry points' };
+const VERB_TONE = { GET: 'success', POST: 'info', PUT: 'attention', PATCH: 'attention', DELETE: 'critical' };
+const KIND_BADGE = { route: 'ROUTE', cli: 'CLI', handler: 'TASK', main: 'MAIN', root: 'FN' };
+// "POST /orders" -> badge POST (info) + "/orders";  cli/handler/main -> neutral kind badge + label
+function badgeOf(e) {
+  const [verb, ...rest] = e.label.split(' ');
+  if (e.kind === 'route' && VERB_TONE[verb]) return { text: verb, tone: VERB_TONE[verb], label: rest.join(' ') };
+  return { text: KIND_BADGE[e.kind] || e.kind, tone: '', label: e.label };
+}
+function badgeEl(b) { const s = document.createElement('span'); s.className = 'badge' + (b.tone ? ' tone-' + b.tone : ''); s.textContent = b.text; return s; }
+
+// "Open in editor" links. The editor is the user's default, detected by `seqgram build` / `seqgram serve`
+// from the terminal they run in (seqgram/editor.py): a browser cannot see it. On file:// pages the link
+// uses that editor's URL scheme; pages from `seqgram serve` ask the server to open the file via its CLI.
+const EDITOR = '__EDITOR__';
+const EDITOR_NAME = { vscode: 'VS Code', cursor: 'Cursor', windsurf: 'Windsurf', antigravity: 'Antigravity', zed: 'Zed',
+                      pycharm: 'PyCharm', idea: 'IntelliJ IDEA', system: 'your editor' };
+//  vscode://file<abs>:<line>:<col> is VS Code's handler; Cursor / Windsurf / Antigravity are VS Code forks with
+//  their own scheme (Cursor confirmed by users; Windsurf, Antigravity inferred). Zed: zed://file<abs>:<line>.
+const fileUrl = scheme => (p, l) => `${scheme}://file${encodeURI(p)}:${l}:1`;
+const jetbrains = scheme => (p, l) => `${scheme}://open?file=${encodeURIComponent(p)}&line=${l}`;
+const EDITOR_URL = { vscode: fileUrl('vscode'), cursor: fileUrl('cursor'), windsurf: fileUrl('windsurf'),
+                     antigravity: fileUrl('antigravity'), zed: (p, l) => `zed://file${encodeURI(p)}:${l}`,
+                     pycharm: jetbrains('pycharm'), idea: jetbrains('idea') };
+function editorUrl(fn) {                           // absolute path = build root + relative file
+  let abs = (G.stats.root + '/' + fn.file).replace(/\\/g, '/');
+  if (!abs.startsWith('/')) abs = '/' + abs;       // Windows: /C:/repo/app.py
+  return (EDITOR_URL[EDITOR] || EDITOR_URL.vscode)(abs, fn.line);
+}
+
+const ROOT_LIMIT = 20;                             // same as the CLI: top roots first, rest behind "Show more"
+let showAllRoots = false;
+// page icons: Lucide (https://lucide.dev, ISC), inlined so the page loads nothing extra
+const LUCIDE = {
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  terminal: '<path d="M12 19h8"/><path d="m4 17 6-6-6-6"/>',
+  zap: '<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/>',
+  play: '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>',
+  'file-code': '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/>',
+  search: '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+};
+const lucide = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${LUCIDE[name]}</svg>`;
+const KIND_ICON = { route: 'globe', cli: 'terminal', handler: 'zap', main: 'play', root: 'file-code' };
+const qualOf = fn => fn.cls ? fn.cls + '.' + fn.name : fn.name;
+
+function renderFlowList(filter = '') {
+  const nav = $('flowlist'); nav.innerHTML = '';
+  const f = filter.toLowerCase();
+  const groups = {};
+  for (const e of G.entries) if (!f || (e.label + ' ' + e.id).toLowerCase().includes(f)) (groups[e.kind] ||= []).push(e);
+  const closed = new Set(prefs.closed || []);
+  for (const kind of ['route', 'cli', 'handler', 'main', 'root']) {
+    if (!groups[kind]) continue;
+    const g = document.createElement('details'); g.className = 'group';
+    g.open = f !== '' || !closed.has(kind);                  // searching always shows matches
+    g.innerHTML = `<summary>${KIND_TITLE[kind]}</summary>`;
+    g.addEventListener('toggle', () => {
+      if (f) return;
+      g.open ? closed.delete(kind) : closed.add(kind);
+      prefs.closed = [...closed]; savePrefs();
+    });
+    const list = kind === 'root' && !f && !showAllRoots ? groups[kind].slice(0, ROOT_LIMIT) : groups[kind];
+    for (const e of list) {
+      const fn = G.functions[e.id];
+      const b = document.createElement('button'); b.className = 'flow';
+      const bd = badgeOf(e), lab = document.createElement('span');
+      lab.className = 'label'; lab.textContent = bd.label;
+      b.append(...(kind === 'root' ? [] : [badgeEl(bd)]), lab); b.title = `${e.id}\n${fn.file}:${fn.line}`;   // every root is 'FN': skip the badge, keep the room
+      if (kind === 'root') {                        // many roots share names (run, get): show the module
+        const w = document.createElement('span'); w.className = 'where'; w.textContent = fn.module.split('.').pop(); b.append(w);
+      }
+      if (changedEntries.has(e.id)) {
+        const dot = document.createElement('span'); dot.className = 'chg'; dot.title = 'changed since you opened it';
+        b.append(dot); b.title += '\nchanged since you opened it';
+      }
+      b.setAttribute('aria-current', state.path[0] === e.id ? 'true' : 'false');
+      b.onclick = () => { state.path = [e.id]; update(); };
+      g.appendChild(b);
+    }
+    if (list.length < groups[kind].length) {
+      const more = document.createElement('button'); more.className = 'morebtn';
+      more.textContent = `Show ${groups[kind].length - list.length} more (ranked lower)`;
+      more.onclick = () => { showAllRoots = true; renderFlowList(filter); };
+      g.appendChild(more);
+    }
+    nav.appendChild(g);
+  }
+  if (!nav.children.length) nav.innerHTML = `<p class="empty">${G.entries.length ? 'No flow matches that search.' : 'No entry points were detected. Run seqgram show &lt;function&gt; to start from any function.'}</p>`;
+}
+
+// Notion-style path: project / POST /orders / OrderService.place  (each step is a zoom level you can go back to)
+function renderCrumbs() {
+  const c = $('crumbs'); c.innerHTML = '';
+  const add = (text, onclick, title) => {
+    if (c.children.length) { const sep = document.createElement('span'); sep.className = 'sep'; sep.textContent = '/'; c.appendChild(sep); }
+    const el = document.createElement(onclick ? 'button' : 'span');
+    el.textContent = text; if (title) el.title = title;
+    if (onclick) el.onclick = onclick; else el.className = 'here';
+    c.appendChild(el);
+  };
+  const project = document.title.replace('seqgram — ', '');
+  if (!state.path.length) { add(project); return; }
+  add(project, () => {}, project);
+  state.path.forEach((fid, i) => {
+    const fn = G.functions[fid], entry = i === 0 && G.entries.find(e => e.id === fid);
+    const name = entry ? entry.label : qualOf(fn);
+    add(name, i === state.path.length - 1 ? null : () => { state.path = state.path.slice(0, i + 1); update(); }, `${fn.file}:${fn.line}`);
+  });
+}
+
+let renderSeq = 0;
+async function renderDiagram() {
+  const box = $('diagram');
+  if (!state.path.length) { box.innerHTML = ''; buildStickyHead(); setupPlayer([], new Map()); renderChanges(null); return; }
+  const root = state.path[state.path.length - 1];
+  const tree = expand(root, state.depth);
+  const msg = project(tree, state.level, state.externals);
+  const { text, order, aliases } = renderMermaid(msg, state.level, 'User', state.returns);
+  state.lastMermaid = text;
+  const rfn = G.functions[root], entry = G.entries.find(e => e.id === root);
+  const name = entry ? entry.label : qualOf(rfn);
+  $('icon').innerHTML = lucide(entry ? KIND_ICON[entry.kind] : 'search');
+  $('title').textContent = name;
+  $('kind').replaceChildren(entry ? badgeEl(badgeOf(entry)) : badgeEl({ text: 'Zoomed call', tone: '' }),
+                            ...(entry ? [document.createTextNode(KIND_TITLE[entry.kind].replace(/s$/, ''))] : []));
+  $('source').textContent = `${rfn.file}:${rfn.line}`;
+  $('source').href = editorUrl(rfn);
+  $('source').title = `Open in ${EDITOR_NAME[EDITOR] || 'your editor'}`;
+  $('count').textContent = `${countMessages(msg)} messages · ${state.level} level · depth ${state.depth}`;
+  // a little more detail, all derived from the graph already in the page
+  const lanes = new Set();
+  (function walk(m) { lanes.add(m.src); lanes.add(m.dst); m.children.forEach(walk); })(msg);
+  lanes.delete('User');
+  const laneNames = [...lanes].map(p => displayName(p, state.level));
+  $('parts').textContent = `${lanes.size} · ${laneNames.slice(0, 4).join(', ')}${lanes.size > 4 ? ', …' : ''}`;
+  $('parts').title = laneNames.join(', ');
+  state.lastCounts = { steps: countMessages(msg), lanes: lanes.size };
+  renderDepthInfo();
+  const allowed = new Set(EXT_MODES.slice(1, EXT_MODES.indexOf(state.externals) + 1));
+  const own = new Set(); let ext = 0;
+  (function walk(n) { for (const c of n.children) { if (c.callee.startsWith('ext:')) ext += allowed.has(c.extKind || 'local'); else own.add(c.callee); walk(c); } })(tree);
+  $('calls').textContent = `${own.size} of your functions · ${ext} external calls`;
+  if (/\.[mc]?[jt]sx?$/.test(rfn.file)) {          // TS/JS: show it the way the code reads
+    const route = rfn.decorators.find(d => !d.startsWith('route.'));   // route.* = Next.js file route (synthetic)
+    $('defn').textContent = route ? `${route.replace(/\)$/, '')}, …)`
+      : `${rfn.decorators.length ? 'export ' : ''}${rfn.is_async ? 'async ' : ''}function ${rfn.name}()`;
+  } else {
+    const defn = rfn.decorators.length ? rfn.decorators.map(d => '@' + d).join(' ') + ' ' : '';
+    $('defn').textContent = `${defn}${rfn.is_async ? 'async ' : ''}def ${rfn.name}()`;
+  }
+  $('defn').title = $('defn').textContent;
+  if (!entry) {
+    const sites = Object.values(G.functions).reduce((n, f) => n + f.calls.filter(c => c.resolved === root).length, 0);
+    const sub = document.createElement('span'); sub.className = 'sub';
+    sub.textContent = `called from ${sites} place${sites === 1 ? '' : 's'}`;
+    $('kind').append(sub);
+  }
+  const lede = $('lede'); lede.textContent = '';
+  const b = document.createElement('b'); b.textContent = name;
+  lede.append(entry && entry.kind === 'route' ? 'When a user calls ' : 'When ', b,
+              entry && entry.kind === 'route' ? ', these steps run in order, top to bottom.' : ' runs, these steps happen in order, top to bottom.');
+  const seq = ++renderSeq;
+  try {
+    const { svg } = await mermaid.render('seq' + seq, text);
+    if (seq !== renderSeq) return;
+    box.innerHTML = svg;
+    // replace mermaid's stick figure with a box + person icon, same size as the other participants
+    // (the figure's head circle sits on the lane centre; Copy Mermaid still exports a plain actor)
+    const ref = box.querySelector('rect.actor-top')?.nextElementSibling;   // a participant label, for its font
+    box.querySelectorAll('g.actor-man').forEach(g => {
+      const cx = +g.querySelector('circle').getAttribute('cx');
+      g.classList.add('user-actor');
+      g.innerHTML = `<rect x="${cx - 50}" y="0" width="100" height="36" rx="6"/>`
+        + `<path transform="translate(${cx - 36} 8)" d="M10 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-6 7c0-3 2.7-5 6-5s6 2 6 5v.5H4V17Z"/>`
+        + `<text x="${cx + 8}" y="18" text-anchor="middle" dominant-baseline="central">User</text>`;
+      if (ref) g.lastChild.setAttribute('style', ref.getAttribute('style') || '');
+      box.querySelectorAll(`line[x1="${cx}"][y1="80"]`).forEach(l => l.setAttribute('y1', 5));   // lifeline from the box, like the others
+    });
+    applyZoom();
+    buildStickyHead();
+    // attach zoom-in behaviour: messageText elements appear in emission order
+    const texts = box.querySelectorAll('.messageText');
+    texts.forEach((el, i) => {
+      const m = order[i]; if (!m || m.ret) return;
+      if (m.external) { el.classList.add('external'); return; }
+      const canZoom = m.callee !== root && G.functions[m.callee] && (G.functions[m.callee].calls.length > 0);
+      if (canZoom) {
+        el.classList.add('zoomable'); el.setAttribute('tabindex', '0'); el.setAttribute('role', 'button');
+        const go = () => { state.path = [...state.path, m.callee]; update(); };
+        el.addEventListener('click', go); el.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        t.textContent = `zoom into ${m.callee}`; el.appendChild(t);
+      } else el.classList.add('leaf');
+    });
+    setupPlayer(order, aliases);
+    markChanges(order, root);
+  } catch (e) {
+    head = null; syncStickyHead(); setupPlayer([], new Map()); renderChanges(null);
+    box.innerHTML = `<div class="err">Mermaid could not render this flow:\n${e.message || e}\n\n${text}</div>`;
+  }
+}
+
+function update() {
+  renderFlowList($('q').value);
+  renderCrumbs();
+  $('ladder').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.level === state.level ? 'true' : 'false'));
+  renderDiagram();
+  if (state.path.length) location.hash = state.path[state.path.length - 1].replace(/[^A-Za-z0-9_.~-]/g, '_');
+}
+
+function initMermaid() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = n => cs.getPropertyValue(n).trim();
+  mermaid.initialize({
+    startOnLoad: false, theme: 'base', fontFamily: v('--font'),
+    themeVariables: {
+      background: v('--surface'), primaryColor: v('--surface-2'), primaryTextColor: v('--ink'), primaryBorderColor: v('--faint'),
+      lineColor: v('--ink'), textColor: v('--ink'), actorBkg: v('--surface'), actorBorder: v('--faint'), actorTextColor: v('--ink'),
+      actorLineColor: v('--line'), signalColor: v('--ink'), signalTextColor: v('--ink'), labelBoxBkgColor: v('--surface-2'),
+      labelBoxBorderColor: v('--line'), labelTextColor: v('--muted'), loopTextColor: v('--muted'), noteBkgColor: v('--note'),
+      noteBorderColor: v('--note-line'), noteTextColor: v('--ink'), activationBkgColor: v('--link-soft'), activationBorderColor: v('--link'),
+      sequenceNumberColor: '#fff', fontSize: '13px'
+    },
+    // width/height: minimum participant box (long names still widen their own box)
+    sequence: { mirrorActors: false, useMaxWidth: true, width: 100, height: 36, actorFontSize: 13, actorMargin: 28, messageMargin: 34, boxMargin: 8, wrap: false, showSequenceNumbers: false }
+  });
+}
+
+$('ladder').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { state.level = b.dataset.level; update(); } });
+$('depth').addEventListener('change', e => { state.depth = Math.max(1, Math.min(12, +e.target.value || 2)); update(); });
+$('ext').addEventListener('change', e => { state.externals = e.target.value; update(); });
+$('returns').addEventListener('change', e => { state.returns = e.target.checked; update(); });
+
+// ---- visual zoom: scales the picture only (the level tabs are the semantic zoom) ----
+function applyZoom() {
+  const svg = $('diagram').querySelector('svg'); if (!svg) return;
+  const w = svg.viewBox.baseVal.width || svg.getBBox().width;
+  const z = state.zoom === 'fit' ? Math.min(1, ($('canvas').clientWidth - 48) / w) : state.zoom;
+  svg.style.maxWidth = 'none'; svg.style.width = Math.round(w * z) + 'px';
+  state.scale = z;
+  $('zoomPct').textContent = Math.round(z * 100) + '%';
+  $('zoomFit').setAttribute('aria-pressed', state.zoom === 'fit');
+  syncStickyHead();
+}
+
+// ---- play: walk the flow one arrow at a time on the rendered diagram ----------
+// Mermaid emits one .messageText and one .messageLine per arrow, in the same order as `order`
+// (returns included), so step k = (text k, line k). Lanes are found by mermaid's alias (name="pN").
+const player = { steps: [], seq: [], pos: -1, mode: 'all', added: [], timer: null, speed: 1 };
+const PLAY_ICON = '<svg width="12" height="12" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5v13l11-6.5-11-6.5Z"/></svg>';
+const PAUSE_ICON = '<svg width="12" height="12" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5h3.5v13H5zM11.5 3.5H15v13h-3.5z"/></svg>';
+function setupPlayer(order, aliases) {
+  clearTimeout(player.timer); player.timer = null;
+  const d = $('diagram'), texts = d.querySelectorAll('.messageText'), lines = d.querySelectorAll('.messageLine0, .messageLine1');
+  player.steps = order.map((o, k) => {
+    const m = o.ret || o, from = o.ret ? m.dst : m.src, to = o.ret ? m.src : m.dst;
+    return { m, ret: !!o.ret, from, to, a: aliases.get(from), b: aliases.get(to), text: texts[k], line: lines[k] };
+  }).filter(s => s.text && s.line);
+  player.seq = player.steps.map((_, k) => k); player.mode = 'all'; player.added = [];
+  $('player').hidden = !player.steps.length;
+  showStep(-1);
+}
+function showStep(pos) {                           // pos indexes player.seq; i is the step in the diagram
+  player.pos = pos;
+  const i = pos >= 0 ? player.seq[pos] : -1;
+  $('diagram').classList.toggle('playing', i >= 0);
+  player.steps.forEach((s, k) => [s.text, s.line].forEach(el => {
+    el.classList.toggle('current', k === i); el.classList.toggle('future', k > i);
+  }));
+  document.querySelectorAll('.lane-active').forEach(el => el.classList.remove('lane-active'));
+  const s = player.steps[i];
+  if (s) {
+    for (const a of [s.a, s.b]) document.querySelectorAll(`#diagram [name="${a}"], #stickyhead [name="${a}"]`).forEach(el => el.classList.add('lane-active'));
+    scrollToStep(s);
+  }
+  renderPlayer();
+}
+function scrollToStep(s) {                          // keep the current arrow in view (below the sticky strip)
+  const c = $('canvas'), r = s.line.getBoundingClientRect(), v = c.getBoundingClientRect();
+  const top = v.top + ($('stickyhead').hidden ? 16 : $('stickyhead').offsetHeight + 16), bottom = v.bottom - 56;
+  const dy = r.top < top || r.bottom > bottom ? (r.top + r.bottom) / 2 - (top + bottom) / 2 : 0;
+  const dx = r.left < v.left || r.right > v.right ? (r.left + r.right) / 2 - (v.left + v.right) / 2 : 0;
+  if (dx || dy) c.scrollBy({ left: dx, top: dy, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+function renderPlayer() {
+  const n = player.seq.length, pos = player.pos, s = player.steps[player.seq[pos]];
+  const unit = player.mode === 'changes' ? 'changes' : 'steps';
+  $('playBtn').innerHTML = player.timer ? PAUSE_ICON + 'Pause' : PLAY_ICON + (pos === n - 1 ? 'Replay' : 'Play');
+  $('stepCount').textContent = pos < 0 ? `${n} ${unit}` : `${pos + 1} / ${n}${player.mode === 'changes' ? ' changes' : ''}`;
+  $('prevStep').disabled = pos <= 0; $('nextStep').disabled = pos >= n - 1;
+  $('speedBtn').textContent = player.speed + '×';
+  const cap = $('stepCaption'); cap.replaceChildren();
+  if (!s) return;
+  const name = p => p === 'User' ? 'User' : displayName(p, state.level);
+  const who = document.createElement('b'); who.textContent = `${name(s.from)} → ${name(s.to)}`;           // returns too: sender → receiver
+  cap.append(who, ' ' + (s.ret ? 'return' : s.m.label + (s.m.count > 1 ? ' ×' + s.m.count : '')));
+  const fn = !s.ret && G.functions[s.m.callee];
+  if (fn) {
+    const a = document.createElement('a'); a.className = 'mono srclink'; a.href = editorUrl(fn); a.textContent = `${fn.file}:${fn.line}`;
+    a.title = `Open in ${EDITOR_NAME[EDITOR] || 'your editor'}`;
+    a.addEventListener('click', e => openInEditor(e, fn, msg => { a.textContent = msg; setTimeout(() => a.textContent = `${fn.file}:${fn.line}`, 2000); }));
+    cap.append(' · ', a);
+  }
+  if (!s.ret && s.m.context.length) {
+    const ctx = document.createElement('span'); ctx.className = 'muted';
+    ctx.textContent = ' · in ' + s.m.context.map(fragLabel).join(' › ');
+    cap.append(ctx);
+  }
+  cap.title = cap.textContent;
+}
+function stopPlay() { clearTimeout(player.timer); player.timer = null; renderPlayer(); }
+function play() {
+  if (player.timer) return stopPlay();
+  if (!player.seq.length) return;
+  if (player.pos >= player.seq.length - 1) player.pos = -1;
+  const tick = () => {
+    player.timer = -1;                             // "playing" while this step renders
+    showStep(player.pos + 1);
+    player.timer = player.pos < player.seq.length - 1 ? setTimeout(tick, 900 / player.speed) : null;
+    renderPlayer();
+  };
+  tick();
+}
+const stepBy = d => { stopPlay(); showStep(Math.max(0, Math.min(player.seq.length - 1, player.pos + d))); };
+function resetPlayer() { stopPlay(); player.seq = player.steps.map((_, k) => k); player.mode = 'all'; showStep(-1); }
+function playChanges() {
+  if (!player.added.length) return;
+  stopPlay(); player.seq = player.added; player.mode = 'changes'; player.pos = -1; play();
+}
+$('playBtn').onclick = play;
+$('prevStep').onclick = () => stepBy(-1);
+$('nextStep').onclick = () => stepBy(1);
+$('speedBtn').onclick = () => { player.speed = { 0.5: 1, 1: 2, 2: 0.5 }[player.speed]; renderPlayer(); };
+
+// ---- live mode: follow the code while the AI edits it (only when served by `seqgram serve`) -------
+// The server rebuilds on each /__version poll and keeps graph.base.json = the graph when serve started
+// (or when the user pressed "Mark as seen"). Steps not in the baseline flow are drawn green.
+let BASE = null, changedEntries = new Set(), polling = false;
+const fetchJson = async url => { const r = await fetch(url, { cache: 'no-store' }); if (!r.ok) throw new Error(r.status); return r.json(); };
+function withGraph(g, fn) {                         // run expand/project against another graph version
+  const saved = { functions: G.functions, entries: G.entries, stats: G.stats };
+  Object.assign(G, { functions: g.functions, entries: g.entries, stats: g.stats });
+  try { return fn(); } finally { Object.assign(G, saved); }
+}
+const stepKey = o => { const m = o.ret || o; return `${o.ret ? 'ret ' : ''}${m.src}>${m.dst}:${m.label}#${m.context.join('/')}`; };
+function diffFlow(order, root) {                   // LCS over the arrow sequence: order matters, line numbers do not
+  if (!BASE) return null;
+  if (!BASE.functions[root]) return { added: new Set(order.map((_, k) => k)), removed: [], isNew: true };
+  const old = withGraph(BASE, () => renderMermaid(project(expand(root, state.depth), state.level, state.externals),
+                                                  state.level, 'User', state.returns).order);
+  const a = old.map(stepKey), b = order.map(stepKey), n = a.length, m = b.length;
+  const L = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const added = new Set(), removed = [];
+  for (let i = 0, j = 0; i < n || j < m;) {
+    if (i < n && j < m && a[i] === b[j]) { i++; j++; }
+    else if (j < m && (i >= n || L[i][j + 1] >= L[i + 1][j])) added.add(j++);
+    else removed.push(old[i++]);
+  }
+  return { added, removed, isNew: false };
+}
+function markChanges(order, root) {
+  const diff = diffFlow(order, root);
+  player.added = diff ? [...diff.added].filter(k => k < player.steps.length) : [];
+  player.steps.forEach((s, k) => [s.text, s.line].forEach(el => el.classList.toggle('added', !!diff && diff.added.has(k))));
+  renderChanges(diff);
+}
+function renderChanges(diff) {
+  const calls = diff ? [...diff.added].filter(k => player.steps[k] && !player.steps[k].ret).length : 0;
+  const gone = diff ? diff.removed.filter(o => !o.ret) : [];
+  $('changes').hidden = !diff || (!calls && !gone.length);
+  if ($('changes').hidden) return;
+  const t = $('changesText'); t.replaceChildren();
+  const b = document.createElement('b');
+  b.textContent = diff.isNew ? 'New flow' : `+${calls} step${calls === 1 ? '' : 's'}`;
+  t.append(b);
+  if (gone.length) {
+    const r = document.createElement('span'); r.className = 'muted';
+    r.textContent = ` · −${gone.length} removed: ` + gone.map(o => `${displayName(o.dst, state.level)}.${o.label}`).join(', ');
+    t.append(r);
+  }
+  t.append(' since you opened it' + (calls ? ' (green in the diagram)' : ''));
+  $('playChanges').hidden = !player.added.length;
+}
+function treeSig(root) {                            // what a flow calls, ignoring line numbers
+  const out = [];
+  (function walk(n, d) { out.push(d + n.callee + '#' + n.context.join('/')); n.children.forEach(c => walk(c, d + 1)); })(expand(root, state.depth), 0);
+  return out.join('\n');
+}
+function computeChangedEntries() {
+  changedEntries = new Set(BASE ? G.entries.filter(e => !BASE.functions[e.id] || treeSig(e.id) !== withGraph(BASE, () => treeSig(e.id))).map(e => e.id) : []);
+}
+async function loadBase() {
+  try { BASE = await fetchJson('graph.base.json'); } catch { BASE = null; }
+  computeChangedEntries();
+}
+function flashLive(text) {
+  const l = $('live'); l.hidden = false; l.textContent = text; l.classList.remove('flash'); void l.offsetWidth; l.classList.add('flash');
+  clearTimeout(flashLive.t); flashLive.t = setTimeout(() => { l.textContent = 'Live'; l.classList.remove('flash'); }, 2500);
+}
+async function poll() {
+  if (document.hidden || polling) return;
+  polling = true;
+  try {
+    const v = await fetchJson('/__version');
+    $('live').hidden = false;
+    if (v.message && v.message !== G.stats.version) {
+      const g = await fetchJson('graph.json');
+      Object.assign(G, { functions: g.functions, entries: g.entries, stats: g.stats });
+      if (!state.path.every(id => G.functions[id])) state.path = G.entries.length ? [G.entries[0].id] : [];
+      computeChangedEntries(); update(); flashLive('Updated');
+    }
+  } catch {} finally { polling = false; }
+}
+$('playChanges').onclick = playChanges;
+// ---- depth info: hover to peek, click to pin, pick a depth right from it ----------
+const depthTip = { pinned: false, t: null };
+const depthTipOpen = () => $('depthInfo').matches(':popover-open');
+function placeDepthInfo() {                         // under the (i), or above when there is no room; caret points at it
+  const r = $('depthInfoBtn').getBoundingClientRect(), pop = $('depthInfo');
+  const below = innerHeight - r.bottom > pop.offsetHeight + 16;
+  const left = Math.max(8, Math.min(innerWidth - pop.offsetWidth - 8, r.left + r.width / 2 - pop.offsetWidth / 2));
+  pop.style.left = `${left}px`;
+  pop.style.top = `${below ? r.bottom + 8 : r.top - pop.offsetHeight - 8}px`;
+  pop.style.setProperty('--caret-x', `${r.left + r.width / 2 - left}px`);
+  pop.classList.toggle('above', !below);
+}
+function renderDepthInfo() {
+  $('depthInfo').querySelectorAll('[data-depth]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.depth === Math.min(state.depth, 4)));
+  const c = state.lastCounts;
+  $('depthNow').textContent = c ? `Now: depth ${state.depth} · ${c.steps} steps · ${c.lanes} participants` : '';
+}
+function showDepthInfo(pin) {
+  clearTimeout(depthTip.t);
+  if (pin) depthTip.pinned = true;
+  if (!depthTipOpen()) { renderDepthInfo(); $('depthInfo').showPopover(); placeDepthInfo(); }
+  $('depthInfoBtn').setAttribute('aria-expanded', 'true');
+}
+function hideDepthInfo() {
+  clearTimeout(depthTip.t); depthTip.pinned = false;
+  if (depthTipOpen()) $('depthInfo').hidePopover();
+  $('depthInfoBtn').setAttribute('aria-expanded', 'false');
+}
+$('depthInfoBtn').onclick = () => depthTip.pinned ? hideDepthInfo() : showDepthInfo(true);
+for (const el of [$('depthInfoBtn'), $('depthInfo')]) {
+  el.addEventListener('mouseenter', () => { clearTimeout(depthTip.t); if (!depthTipOpen()) depthTip.t = setTimeout(() => showDepthInfo(false), 250); });
+  el.addEventListener('mouseleave', () => { clearTimeout(depthTip.t); if (!depthTip.pinned) depthTip.t = setTimeout(hideDepthInfo, 300); });
+}
+$('depthInfo').addEventListener('click', e => {
+  const b = e.target.closest('[data-depth]'); if (!b) return;
+  state.depth = +b.dataset.depth; $('depth').value = state.depth; depthTip.pinned = true; update();
+});
+document.addEventListener('click', e => { if (depthTipOpen() && !e.target.closest('#depthInfo, #depthInfoBtn')) hideDepthInfo(); });
+addEventListener('resize', () => { if (depthTipOpen()) placeDepthInfo(); });
+$('markSeen').onclick = async () => {
+  try { await fetch('/__baseline', { method: 'POST' }); } catch {}
+  await loadBase(); update();
+};
+
+// ---- sticky participants ---------------------------------------------------
+// Mermaid draws the participant row inside the SVG, so CSS `sticky` cannot pin it. Instead:
+// clone the SVG, crop its viewBox to that row, and show the strip at the top of the canvas
+// once the real row has scrolled out of view. Mermaid scopes its <style> by the svg id,
+// so the clone gets its own id and a rewritten stylesheet.
+let head = null;                                   // { clone, vb, top, h } in SVG units
+function buildStickyHead() {
+  head = null; $('stickyhead').replaceChildren();
+  const svg = $('diagram').querySelector('svg'), tops = svg ? [...svg.querySelectorAll('.actor-top')] : [];
+  if (!tops.length) return syncStickyHead();
+  const vb = svg.viewBox.baseVal;
+  const boxes = tops.map(t => t.getBBox());
+  const top = Math.min(...boxes.map(b => b.y)), bottom = Math.max(...boxes.map(b => b.y + b.height)) + 8;
+  const clone = svg.cloneNode(true);
+  clone.id = svg.id + '-head';
+  clone.querySelectorAll('style').forEach(st => { st.textContent = st.textContent.replaceAll('#' + svg.id, '#' + clone.id); });
+  clone.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.width} ${bottom - vb.y}`);
+  clone.removeAttribute('width');
+  clone.style.cssText = 'display:block;max-width:none';
+  $('stickyhead').appendChild(clone);
+  head = { clone, vb, top: top - vb.y, h: bottom - vb.y };
+  syncStickyHead();
+}
+function syncStickyHead() {
+  const strip = $('stickyhead');
+  if (!head) { strip.hidden = true; return; }
+  const z = state.scale, d = $('diagram').getBoundingClientRect(), c = $('canvas').getBoundingClientRect();
+  strip.hidden = d.top + head.top * z >= c.top;   // real row still (fully) visible
+  if (strip.hidden) return;
+  head.clone.style.width = head.vb.width * z + 'px';
+  head.clone.style.height = head.h * z + 'px';
+  head.clone.style.marginLeft = d.left - c.left + 'px';
+}
+function zoomTo(z, cx, cy) {            // keep the point under (cx, cy) still; default: canvas centre
+  const c = $('canvas'), old = state.scale;
+  z = Math.max(0.1, Math.min(4, z));
+  cx ??= c.clientWidth / 2; cy ??= c.clientHeight / 2;
+  const px = c.scrollLeft + cx, py = c.scrollTop + cy;
+  state.zoom = z; applyZoom();
+  c.scrollLeft = px * z / old - cx; c.scrollTop = py * z / old - cy;
+}
+$('zoomIn').onclick = () => zoomTo(state.scale * 1.25);
+$('zoomOut').onclick = () => zoomTo(state.scale / 1.25);
+$('zoomPct').onclick = () => zoomTo(1);
+$('zoomFit').onclick = () => { state.zoom = 'fit'; applyZoom(); };
+new ResizeObserver(() => { if (state.zoom === 'fit') applyZoom(); else syncStickyHead(); }).observe($('canvas'));
+$('canvas').addEventListener('scroll', syncStickyHead, { passive: true });
+
+// ---- layout: resizable / collapsible sidebar and zen mode (remembered across reloads) ----
+const prefs = (() => { try { return JSON.parse(localStorage.getItem('seqgram.layout')) || {}; } catch { return {}; } })();
+const savePrefs = () => { try { localStorage.setItem('seqgram.layout', JSON.stringify(prefs)); } catch {} };
+function setNavWidth(w) { prefs.navW = Math.round(Math.max(180, Math.min(520, w))); document.body.style.setProperty('--nav-w', prefs.navW + 'px'); }
+function setNavCollapsed(c) {
+  prefs.navCollapsed = c; document.body.classList.toggle('nav-collapsed', c);
+  $('navToggle').setAttribute('aria-expanded', !c); savePrefs();
+}
+function setZen(on) {
+  document.body.classList.toggle('zen', on);
+  $('zenToggle').setAttribute('aria-pressed', on); $('zenToggle').textContent = on ? 'Exit zen' : 'Zen';
+}
+function setTheme(t, save) {
+  document.documentElement.dataset.theme = t;
+  if (save) { prefs.theme = t; savePrefs(); }
+  initMermaid(); renderDiagram();
+}
+const toggleTheme = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true);
+$('themeToggle').onclick = toggleTheme;
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => { if (!prefs.theme) setTheme(e.matches ? 'dark' : 'light'); });
+// Embedded browsers (VS Code's built-in one is a webview) drop editor:// links. When the page comes
+// from `seqgram serve`, ask it to open the file through the editor's CLI instead; on file:// the
+// plain link is used, and if no seqgram server answers we fall back to it too.
+async function openInEditor(e, fn, status) {
+  if (!location.protocol.startsWith('http')) return;
+  e.preventDefault();
+  const href = editorUrl(fn);
+  try {
+    const r = await fetch('/__open', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                       body: JSON.stringify({ file: fn.file, line: fn.line }) });
+    const res = await r.json().catch(() => null);
+    if (res) return status(res.message);           // seqgram serve answered: "opened in Zed" / "`code` is not on PATH"
+  } catch {}
+  location.href = href;                            // not served by seqgram: try the editor URL scheme
+}
+const srcStatus = msg => { $('srcStatus').textContent = msg; clearTimeout(srcStatus.t); srcStatus.t = setTimeout(() => $('srcStatus').textContent = '', 2500); };
+$('source').addEventListener('click', e => openInEditor(e, G.functions[state.path[state.path.length - 1]], srcStatus));
+if (prefs.navW) setNavWidth(prefs.navW);
+if (prefs.navCollapsed) setNavCollapsed(true);
+$('navToggle').onclick = () => setNavCollapsed(!document.body.classList.contains('nav-collapsed'));
+$('zenToggle').onclick = () => setZen(!document.body.classList.contains('zen'));
+$('resizer').addEventListener('pointerdown', e => {
+  const r = $('resizer'); r.setPointerCapture(e.pointerId); r.classList.add('dragging'); document.body.classList.add('resizing');
+  const move = ev => setNavWidth(ev.clientX);
+  const up = () => { r.removeEventListener('pointermove', move); r.classList.remove('dragging'); document.body.classList.remove('resizing'); savePrefs(); };
+  r.addEventListener('pointermove', move); r.addEventListener('pointerup', up, { once: true });
+});
+$('resizer').addEventListener('dblclick', () => { setNavWidth(240); savePrefs(); });
+$('canvas').addEventListener('wheel', e => {            // ctrl+wheel and trackpad pinch (sends ctrlKey)
+  if (!e.ctrlKey && !e.metaKey) return;
+  e.preventDefault();
+  const r = $('canvas').getBoundingClientRect();
+  zoomTo(state.scale * Math.exp(-Math.max(-100, Math.min(100, e.deltaY)) / 300), e.clientX - r.left, e.clientY - r.top);
+}, { passive: false });
+let drag = null;                                        // drag the background to pan
+$('canvas').addEventListener('pointerdown', e => {
+  if (e.button !== 0 || e.target.closest('.messageText.zoomable')) return;
+  const c = $('canvas');
+  drag = { x: e.clientX, y: e.clientY, l: c.scrollLeft, t: c.scrollTop };
+  c.classList.add('panning'); c.setPointerCapture(e.pointerId);
+});
+$('canvas').addEventListener('pointermove', e => {
+  if (!drag) return;
+  $('canvas').scrollLeft = drag.l - (e.clientX - drag.x); $('canvas').scrollTop = drag.t - (e.clientY - drag.y);
+});
+for (const ev of ['pointerup', 'pointercancel']) $('canvas').addEventListener(ev, () => { drag = null; $('canvas').classList.remove('panning'); });
+$('q').addEventListener('input', e => renderFlowList(e.target.value));
+$('copy').addEventListener('click', async () => { await navigator.clipboard.writeText(state.lastMermaid); flash($('copy'), 'Copied'); });
+$('copyPrompt').addEventListener('click', async () => {
+  const root = state.path[state.path.length - 1]; if (!root) return;
+  const fn = G.functions[root];
+  const prompt = `Here is the current call flow of \`${fn.cls ? fn.cls + '.' + fn.name : fn.name}\` (${fn.file}:${fn.line}) as a sequence diagram at ${state.level} level, depth ${state.depth}. Use it as the map of where things happen before reading source files. Keep the existing hand-offs between participants unless I ask to change them.\n\n\`\`\`mermaid\n${state.lastMermaid}\n\`\`\`\n\nTask: `;
+  await navigator.clipboard.writeText(prompt); flash($('copyPrompt'), 'Copied');
+});
+function flash(btn, txt) {                         // swap only the label, keep the icon
+  const label = btn.querySelector('span') || btn, o = label.textContent;
+  label.textContent = txt; setTimeout(() => label.textContent = o, 1200);
+}
+document.addEventListener('keydown', e => {
+  if (e.target.closest?.('input, select')) return;
+  if (e.key === 'Escape' && depthTipOpen()) { hideDepthInfo(); $('depthInfoBtn').focus(); return; }
+  if (e.key === ' ' && !e.target.closest('button, a')) { e.preventDefault(); play(); return; }
+  if (e.key === 'ArrowRight' && player.steps.length) { e.preventDefault(); stepBy(1); return; }
+  if (e.key === 'ArrowLeft' && player.steps.length) { e.preventDefault(); stepBy(-1); return; }
+  if (e.key === 'Escape' && player.pos >= 0) { resetPlayer(); return; }
+  if (e.key === 'Escape' && document.body.classList.contains('zen')) setZen(false);
+  if (e.key === 'd' || e.key === 'D') toggleTheme();
+  if (e.key === 'z' || e.key === 'Z') setZen(!document.body.classList.contains('zen'));
+  if (e.key === '\\') setNavCollapsed(!document.body.classList.contains('nav-collapsed'));
+  if (e.key === 'Backspace' && state.path.length > 1) { state.path.pop(); update(); }
+  if (e.key === '+' || e.key === '=') zoomTo(state.scale * 1.25);
+  if (e.key === '-') zoomTo(state.scale / 1.25);
+  if (e.key === '0') { state.zoom = 'fit'; applyZoom(); }
+  if (e.key === '[' || e.key === ']') { const i = LEVELS.indexOf(state.level) + (e.key === ']' ? 1 : -1); if (LEVELS[i]) { state.level = LEVELS[i]; update(); } }
+});
+$('avatar').textContent = document.title.replace('seqgram — ', '').slice(0, 2).toUpperCase();
+
+initMermaid();
+(function start() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  const fromHash = h && Object.keys(G.functions).find(k => k.replace(/[^A-Za-z0-9_.~-]/g, '_') === h);
+  if (fromHash) state.path = [fromHash]; else if (G.entries.length) state.path = [G.entries[0].id];
+  update();
+  if (location.protocol.startsWith('http')) {      // served: fetch the baseline, then follow the code
+    loadBase().then(update); poll(); setInterval(poll, 1500);
+  }
+})();
+</script>
+</body>
+</html>

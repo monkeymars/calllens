@@ -1,0 +1,8 @@
+{
+  // Next.js style: "@/..." points at the project root
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "paths": { "@/*": ["./*"] }
+  }
+}
