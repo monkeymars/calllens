@@ -1,41 +1,41 @@
-# calllens
+# vibesequence
 
 Ubah codebase menjadi **user sequence diagram yang bisa di-zoom**, lalu pakai
 diagram itu sebagai peta saat vibe coding bersama AI assistant.
 
-Graphify menjawab *"apa berhubungan dengan apa"* (graph). calllens menjawab
+Graphify menjawab *"apa berhubungan dengan apa"* (graph). vibesequence menjawab
 *"kalau user melakukan X, siapa memanggil siapa, dalam urutan apa"* (sequence).
 
 ```
 pip install -e .                   # Python project (stdlib saja)
 pip install -e ".[ts]"             # + TypeScript / JavaScript (tree-sitter)
-calllens build .                    # parse repo  ->  calllens-out/
-open calllens-out/index.html        # viewer interaktif: zoom in/out per flow
-calllens list                       # daftar flow (entry point)
-calllens show "POST /orders" --level class --depth 4     # Mermaid untuk satu flow
-calllens show "POST /orders" --format text               # tree ringkas + file:line (paling hemat untuk AI)
-calllens callers OrderRepo.create   # siapa memanggil fungsi ini + flow mana yang terdampak
-calllens diff                       # flow apa yang berubah di build terakhir
-calllens serve                      # viewer di http://127.0.0.1:8765, link Source membuka file di editor
-calllens install                    # instruksi di CLAUDE.md + hook Claude Code (flow yang berubah tampil tiap edit)
+vibesequence build .                    # parse repo  ->  vibesequence-out/
+open vibesequence-out/index.html        # viewer interaktif: zoom in/out per flow
+vibesequence list                       # daftar flow (entry point)
+vibesequence show "POST /orders" --level class --depth 4     # Mermaid untuk satu flow
+vibesequence show "POST /orders" --format text               # tree ringkas + file:line (paling hemat untuk AI)
+vibesequence callers OrderRepo.create   # siapa memanggil fungsi ini + flow mana yang terdampak
+vibesequence diff                       # flow apa yang berubah di build terakhir
+vibesequence serve                      # viewer di http://127.0.0.1:8765, link Source membuka file di editor
+vibesequence install                    # instruksi di CLAUDE.md + hook Claude Code (flow yang berubah tampil tiap edit)
 ```
 
-Output `calllens-out/`:
+Output `vibesequence-out/`:
 
 | file | untuk siapa | isi |
 |---|---|---|
 | `index.html` | manusia | viewer: pilih flow, pilih level (package / module / class / function), klik pesan untuk zoom in, breadcrumb untuk zoom out |
 | `FLOWS.md` | AI assistant | indeks: satu baris per flow (label, id, `file:line`); diagram diambil per flow lewat `show` |
-| `graph.prev.json` | `calllens diff` | graph sebelum perubahan terakhir |
+| `graph.prev.json` | `vibesequence diff` | graph sebelum perubahan terakhir |
 | `graph.json` | tooling | call graph terurut: fungsi, call site, konteks control-flow |
-| `cache.json` | calllens | hash per file untuk build inkremental |
+| `cache.json` | vibesequence | hash per file untuk build inkremental |
 
 Bahasa yang didukung:
 
 | bahasa | extractor | dependency | entry point yang dikenali |
 |---|---|---|---|
 | Python | `extractors/python_ast.py` (stdlib `ast`) | tidak ada | route FastAPI/Flask, CLI click/typer, task, `main` |
-| TypeScript / JavaScript | `extractors/typescript_ts.py` (tree-sitter) | `pip install calllens[ts]` | Next.js `app/**/route.ts` (`export async function POST`, `export const GET = …`), `pages/api/**`, Express `router.get('/x', …)` |
+| TypeScript / JavaScript | `extractors/typescript_ts.py` (tree-sitter) | `pip install vibesequence[ts]` | Next.js `app/**/route.ts` (`export async function POST`, `export const GET = …`), `pages/api/**`, Express `router.get('/x', …)` |
 
 Bahasa lain ditambahkan lewat satu kelas extractor yang mengeluarkan `ModuleFacts` (lihat *Scaling*).
 
@@ -133,17 +133,17 @@ Prioritas: decorator route (`@router.post("/orders")` → label `POST /orders`),
 command CLI (`click`/`typer`), handler (`@task`, `on_*`, `handle_*`), `main`,
 lalu fungsi ber-in-degree 0 yang punya call (bukan test, bukan `@property`).
 
-Untuk kode tanpa route/CLI (library, worker, kode non-web) semua flow berupa `root`; calllens
+Untuk kode tanpa route/CLI (library, worker, kode non-web) semua flow berupa `root`; vibesequence
 mengurutkannya dengan skor = jumlah fungsi milikmu yang dijangkau, dikurangi untuk fungsi private
 (`_x`), nested, dan modul private. `list`, `FLOWS.md` dan sidebar menampilkan 20 teratas (sidebar:
 "Show N more"; `list --all` dan pencarian tetap mencakup semuanya).
 
 **Import root otomatis.** Kalau build dijalankan satu folder terlalu tinggi (monorepo, atau
-`calllens build .` di atas project), import `app.repos.base` tidak cocok dengan modul
-`services.app.repos.base`. calllens mendeteksi prefix seperti itu (>= 3 import cocok ke satu folder)
+`vibesequence build .` di atas project), import `app.repos.base` tidak cocok dengan modul
+`services.app.repos.base`. vibesequence mendeteksi prefix seperti itu (>= 3 import cocok ke satu folder)
 dan menghapusnya dari nama modul, seolah dijalankan di dalam folder itu (`import root: services/`
 tampil di output build). Kalau cocok ke beberapa folder sekaligus atau bentrok dengan modul lain,
-calllens tidak menebak dan memberi peringatan untuk build satu project saja.
+vibesequence tidak menebak dan memberi peringatan untuk build satu project saja.
 
 ### 4. Expand: call graph → call tree
 
@@ -183,7 +183,7 @@ token kalau assistant membaca 8 file sumber. Sibling berurutan dengan tag
 konteks sama dibungkus fragment: `if`+`else` → `alt/else`, `if` saja → `opt`,
 `loop`, `try`/`except` → `opt try` / `opt on error`.
 
-Logika expand/project/render ada dua: Python (`calllens/flow.py`,
+Logika expand/project/render ada dua: Python (`vibesequence/flow.py`,
 `render/mermaid.py`) untuk CLI, dan port JavaScript di `render/viewer.html`
 untuk viewer. Keduanya diuji menghasilkan teks identik (180 kombinasi
 parameter pada dua repo), supaya yang dilihat manusia = yang dibaca AI.
@@ -216,7 +216,7 @@ jadi assistant tidak pernah membaca graph yang basi.
 
 ## Viewer live: lihat apa yang diubah AI
 
-Dibuka lewat `calllens serve`, viewer mengikuti kode sendiri: setiap 1,5 detik (selama tab terlihat)
+Dibuka lewat `vibesequence serve`, viewer mengikuti kode sendiri: setiap 1,5 detik (selama tab terlihat)
 ia meminta server membangun ulang secara inkremental; kalau ada flow yang berubah, diagram
 dirender ulang tanpa reload (indikator **Live** berkedip "Updated").
 
@@ -243,32 +243,32 @@ Ini urutan statis hasil analisis, bukan rekaman eksekusi: kedua cabang `if` teta
 ## Membuka source di editor
 
 Properti **Source** (dan `file:line` di caption Play) membuka file pada baris fungsinya di **editor
-default kamu**. Browser tidak bisa tahu editor itu, jadi `calllens build` / `calllens serve` yang
-mendeteksinya dari terminal tempat ia dijalankan (`calllens/editor.py`), berurutan:
+default kamu**. Browser tidak bisa tahu editor itu, jadi `vibesequence build` / `vibesequence serve` yang
+mendeteksinya dari terminal tempat ia dijalankan (`vibesequence/editor.py`), berurutan:
 
-1. `$CALLLENS_EDITOR` (`vscode|cursor|windsurf|antigravity|zed|pycharm|idea|system`), lalu `$VISUAL` /
+1. `$VIBESEQUENCE_EDITOR` (`vscode|cursor|windsurf|antigravity|zed|pycharm|idea|system`), lalu `$VISUAL` /
    `$EDITOR` bila berisi editor GUI yang dikenal (`code --wait` ya, `vim` dilewati);
 2. editor yang terminalnya sedang dipakai (`TERM_PROGRAM`, `ZED_TERM`, JetBrains `TERMINAL_EMULATOR`,
-   macOS `__CFBundleIdentifier`): jalankan calllens dari terminal VS Code dan link membuka VS Code;
+   macOS `__CFBundleIdentifier`): jalankan vibesequence dari terminal VS Code dan link membuka VS Code;
 3. CLI editor pertama yang ada di `PATH`;
 4. aplikasi default OS untuk file itu (`open` / `xdg-open`, tanpa nomor baris).
 
-* Dibuka sebagai file (`open calllens-out/index.html`): link memakai URL scheme editor hasil deteksi
+* Dibuka sebagai file (`open vibesequence-out/index.html`): link memakai URL scheme editor hasil deteksi
   saat build (`vscode://file/…:line`, `zed://file/…:line`, `pycharm://open?file=…&line=…`).
 * **Browser bawaan VS Code** (dan browser tertanam lain) memblokir URL scheme seperti itu. Pakai
-  `calllens serve` lalu buka `http://127.0.0.1:8765` (VS Code: *Simple Browser: Show*). Klik Source
+  `vibesequence serve` lalu buka `http://127.0.0.1:8765` (VS Code: *Simple Browser: Show*). Klik Source
   meminta server membuka file lewat CLI editor (`code -g file:line`, `zed file:line`, `pycharm --line`).
   CLI itu harus ada di `PATH` (VS Code: *Shell Command: Install 'code' command in PATH*).
   Server hanya listen di 127.0.0.1, menolak request dari origin lain, dan hanya membuka file di dalam project.
 
 ## Loop vibe coding: lihat step yang berubah setelah tiap edit
 
-`calllens build . --hook` membangun ulang, membandingkan setiap flow (level
+`vibesequence build . --hook` membangun ulang, membandingkan setiap flow (level
 function, tanpa nomor baris) dengan graph sebelumnya, lalu mencetak JSON hook
 Claude Code: `systemMessage` untuk **user**, `additionalContext` untuk **Claude**.
 Kalau tidak ada flow yang berubah, tidak mencetak apa pun.
 
-`calllens install` memasangnya otomatis di `.claude/settings.local.json` (personal, tidak di-commit,
+`vibesequence install` memasangnya otomatis di `.claude/settings.local.json` (personal, tidak di-commit,
 karena path perintahnya per mesin; aman dijalankan ulang, `--no-hook` untuk melewati). Isinya setara:
 
 ```json
@@ -277,7 +277,7 @@ karena path perintahnya per mesin; aman dijalankan ulang, `--no-hook` untuk mele
     "PostToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",
-        "hooks": [{ "type": "command", "command": "cd \"$CLAUDE_PROJECT_DIR\" && calllens build . --hook" }]
+        "hooks": [{ "type": "command", "command": "cd \"$CLAUDE_PROJECT_DIR\" && vibesequence build . --hook" }]
       }
     ]
   }
@@ -287,7 +287,7 @@ karena path perintahnya per mesin; aman dijalankan ulang, `--no-hook` untuk mele
 Setelah agent mengedit, user langsung melihat misalnya:
 
 ```
-calllens: flow changed
+vibesequence: flow changed
 ## POST /orders
 ⋮
 +      if order.total > 1000
@@ -295,8 +295,8 @@ calllens: flow changed
        events.publish
 ```
 
-`calllens diff [flow]` menampilkan hal yang sama kapan saja (perubahan terakhir).
-Snippet dari `calllens install` juga meminta assistant menulis sequence diagram
+`vibesequence diff [flow]` menampilkan hal yang sama kapan saja (perubahan terakhir).
+Snippet dari `vibesequence install` juga meminta assistant menulis sequence diagram
 *rencana* di plan sebelum coding, supaya user menyetujui langkah-langkahnya dulu.
 
 ## Scaling
@@ -320,10 +320,10 @@ Langkah berikutnya kalau repo membesar:
    `RequestContext`), dependency injection (konstruktor FastAPI/Nest), protokol/interface
    → implementasi (tampilkan sebagai `alt` antar implementasi).
 3. **Sharding output**: `graph.json` per package + indeks, viewer memuat shard saat
-   flow dibuka; atau MCP server kecil (`calllens serve`) yang mengekspos
+   flow dibuka; atau MCP server kecil (`vibesequence serve`) yang mengekspos
    `list_flows`, `show_flow(root, level, depth)` sehingga assistant memanggil
    tool, bukan membaca file.
-4. **Diff flow vs git ref**: `calllens diff` sekarang membandingkan dengan build sebelumnya; versi `<git-ref>` —
+4. **Diff flow vs git ref**: `vibesequence diff` sekarang membandingkan dengan build sebelumnya; versi `<git-ref>` —
    review PR dengan melihat perubahan sequence, bukan perubahan baris.
 5. **Runtime trace sebagai lapisan opsional**: tangkap trace nyata (OpenTelemetry /
    `sys.setprofile`) untuk menandai jalur yang benar-benar dieksekusi dan
@@ -335,7 +335,7 @@ Langkah berikutnya kalau repo membesar:
 ## Struktur kode
 
 ```
-calllens/
+vibesequence/
   model.py              dataclass: CallSite, FunctionDef, ModuleFacts, EntryPoint, Graph
   extractors/base.py    protocol Extractor + registry per ekstensi
   extractors/python_ast.py   extractor Python (ast), urutan evaluasi, konteks, hint tipe
@@ -348,7 +348,7 @@ calllens/
   render/viewer.html    viewer (port JS dari flow.py + mermaid.py)
   render/html.py        menyuntik graph.json ke viewer
   render/text.py        format text untuk AI: tree + file:line
-  serve.py              calllens serve: viewer via http + buka file di editor lewat CLI-nya
+  serve.py              vibesequence serve: viewer via http + buka file di editor lewat CLI-nya
   editor.py             deteksi editor default user + cara membukanya (URL scheme / CLI)
   cli.py                build / list / show / callers / diff / serve / install
 tests/test_flow.py      smoke test (python tests/test_flow.py)

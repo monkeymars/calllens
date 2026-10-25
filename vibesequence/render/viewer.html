@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>calllens — __PROJECT__</title>
+<title>vibesequence — __PROJECT__</title>
 <script>
-  try { var t = (JSON.parse(localStorage.getItem('calllens.layout')) || {}).theme; } catch (e) {}
+  try { var t = (JSON.parse(localStorage.getItem('vibesequence.layout')) || {}).theme; } catch (e) {}
   document.documentElement.dataset.theme = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 </script>
 <style>
@@ -286,7 +286,7 @@ body.zen .page { padding: 0; }
       </button>
       <div class="crumbs" id="crumbs" aria-label="Zoom path"></div>
       <div class="actions">
-        <span class="live" id="live" hidden title="Updates by itself when the code changes (calllens serve)">Live</span>
+        <span class="live" id="live" hidden title="Updates by itself when the code changes (vibesequence serve)">Live</span>
         <button class="navtoggle themetoggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode (D)">
           <svg class="moon" width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" fill="currentColor"><path d="M8.2 3.1A7 7 0 1 0 16.9 11.8 5.6 5.6 0 0 1 8.2 3.1Z"/></svg>
           <svg class="sun" width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="3.2"/><path d="M10 2.5v1.8M10 15.7v1.8M2.5 10h1.8M15.7 10h1.8M4.7 4.7l1.3 1.3M14 14l1.3 1.3M4.7 15.3 6 14M14 6l1.3-1.3"/></svg>
@@ -387,7 +387,7 @@ body.zen .page { padding: 0; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
 <script>
 /* ===================================================================
-   JavaScript port of calllens/flow.py + render/mermaid.py.
+   JavaScript port of vibesequence/flow.py + render/mermaid.py.
    Same algorithm, so what the CLI prints for the AI assistant is what
    you see here. Keep the two in sync.
    =================================================================== */
@@ -570,9 +570,9 @@ function badgeOf(e) {
 }
 function badgeEl(b) { const s = document.createElement('span'); s.className = 'badge' + (b.tone ? ' tone-' + b.tone : ''); s.textContent = b.text; return s; }
 
-// "Open in editor" links. The editor is the user's default, detected by `calllens build` / `calllens serve`
-// from the terminal they run in (calllens/editor.py): a browser cannot see it. On file:// pages the link
-// uses that editor's URL scheme; pages from `calllens serve` ask the server to open the file via its CLI.
+// "Open in editor" links. The editor is the user's default, detected by `vibesequence build` / `vibesequence serve`
+// from the terminal they run in (vibesequence/editor.py): a browser cannot see it. On file:// pages the link
+// uses that editor's URL scheme; pages from `vibesequence serve` ask the server to open the file via its CLI.
 const EDITOR = '__EDITOR__';
 const EDITOR_NAME = { vscode: 'VS Code', cursor: 'Cursor', windsurf: 'Windsurf', antigravity: 'Antigravity', zed: 'Zed',
                       pycharm: 'PyCharm', idea: 'IntelliJ IDEA', system: 'your editor' };
@@ -654,7 +654,7 @@ function renderFlowList(filter = '') {
     nav.appendChild(g);
    }
   }
-  if (!nav.children.length) nav.innerHTML = `<p class="empty">${G.entries.length ? 'No flow matches that search.' : 'No entry points were detected. Run calllens show &lt;function&gt; to start from any function.'}</p>`;
+  if (!nav.children.length) nav.innerHTML = `<p class="empty">${G.entries.length ? 'No flow matches that search.' : 'No entry points were detected. Run vibesequence show &lt;function&gt; to start from any function.'}</p>`;
 }
 
 // Notion-style path: project / POST /orders / OrderService.place  (each step is a zoom level you can go back to)
@@ -667,7 +667,7 @@ function renderCrumbs() {
     if (onclick) el.onclick = onclick; else el.className = 'here';
     c.appendChild(el);
   };
-  const project = document.title.replace('calllens — ', '');
+  const project = document.title.replace('vibesequence — ', '');
   if (!state.path.length) { add(project); return; }
   add(project, () => {}, project);
   state.path.forEach((fid, i) => {
@@ -901,7 +901,7 @@ $('prevStep').onclick = () => stepBy(-1);
 $('nextStep').onclick = () => stepBy(1);
 $('speedBtn').onclick = () => { player.speed = { 0.5: 1, 1: 2, 2: 0.5 }[player.speed]; renderPlayer(); };
 
-// ---- live mode: follow the code while the AI edits it (only when served by `calllens serve`) -------
+// ---- live mode: follow the code while the AI edits it (only when served by `vibesequence serve`) -------
 // The server rebuilds on each /__version poll and keeps graph.base.json = the graph when serve started
 // (or when the user pressed "Mark as seen"). Steps not in the baseline flow are drawn green.
 let BASE = null, changedEntries = new Set(), polling = false;
@@ -1075,8 +1075,8 @@ new ResizeObserver(() => { if (state.zoom === 'fit') applyZoom(); else syncStick
 $('canvas').addEventListener('scroll', syncStickyHead, { passive: true });
 
 // ---- layout: resizable / collapsible sidebar and zen mode (remembered across reloads) ----
-const prefs = (() => { try { return JSON.parse(localStorage.getItem('calllens.layout')) || {}; } catch { return {}; } })();
-const savePrefs = () => { try { localStorage.setItem('calllens.layout', JSON.stringify(prefs)); } catch {} };
+const prefs = (() => { try { return JSON.parse(localStorage.getItem('vibesequence.layout')) || {}; } catch { return {}; } })();
+const savePrefs = () => { try { localStorage.setItem('vibesequence.layout', JSON.stringify(prefs)); } catch {} };
 function setNavWidth(w) { prefs.navW = Math.round(Math.max(180, Math.min(520, w))); document.body.style.setProperty('--nav-w', prefs.navW + 'px'); }
 function setNavCollapsed(c) {
   prefs.navCollapsed = c; document.body.classList.toggle('nav-collapsed', c);
@@ -1095,8 +1095,8 @@ const toggleTheme = () => setTheme(document.documentElement.dataset.theme === 'd
 $('themeToggle').onclick = toggleTheme;
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => { if (!prefs.theme) setTheme(e.matches ? 'dark' : 'light'); });
 // Embedded browsers (VS Code's built-in one is a webview) drop editor:// links. When the page comes
-// from `calllens serve`, ask it to open the file through the editor's CLI instead; on file:// the
-// plain link is used, and if no calllens server answers we fall back to it too.
+// from `vibesequence serve`, ask it to open the file through the editor's CLI instead; on file:// the
+// plain link is used, and if no vibesequence server answers we fall back to it too.
 async function openInEditor(e, fn, status) {
   if (!location.protocol.startsWith('http')) return;
   e.preventDefault();
@@ -1105,9 +1105,9 @@ async function openInEditor(e, fn, status) {
     const r = await fetch('/__open', { method: 'POST', headers: { 'Content-Type': 'application/json' },
                                        body: JSON.stringify({ file: fn.file, line: fn.line }) });
     const res = await r.json().catch(() => null);
-    if (res) return status(res.message);           // calllens serve answered: "opened in Zed" / "`code` is not on PATH"
+    if (res) return status(res.message);           // vibesequence serve answered: "opened in Zed" / "`code` is not on PATH"
   } catch {}
-  location.href = href;                            // not served by calllens: try the editor URL scheme
+  location.href = href;                            // not served by vibesequence: try the editor URL scheme
 }
 const srcStatus = msg => { $('srcStatus').textContent = msg; clearTimeout(srcStatus.t); srcStatus.t = setTimeout(() => $('srcStatus').textContent = '', 2500); };
 $('source').addEventListener('click', e => openInEditor(e, G.functions[state.path[state.path.length - 1]], srcStatus));
@@ -1169,7 +1169,7 @@ document.addEventListener('keydown', e => {
   if (e.key === '0') { state.zoom = 'fit'; applyZoom(); }
   if (e.key === '[' || e.key === ']') { const i = LEVELS.indexOf(state.level) + (e.key === ']' ? 1 : -1); if (LEVELS[i]) { state.level = LEVELS[i]; update(); } }
 });
-{ const name = document.title.replace('calllens — ', ''); let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+{ const name = document.title.replace('vibesequence — ', ''); let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   $('avatar').textContent = name.slice(0, 2).toUpperCase();
   $('avatar').style.background = `hsl(${h % 360} 55% 48%)`; $('avatar').style.color = '#fff'; } // ponytail: hashed hue, no palette table
 

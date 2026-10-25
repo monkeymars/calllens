@@ -1,8 +1,8 @@
 """Which code editor opens source links, and how.
 
-A browser cannot see the user's default editor, but the `calllens` process can: it runs in the
+A browser cannot see the user's default editor, but the `vibesequence` process can: it runs in the
 user's terminal. detect() looks, in order, at
-  1. $CALLLENS_EDITOR (explicit), then $VISUAL / $EDITOR when they name a GUI editor we know
+  1. $VIBESEQUENCE_EDITOR (explicit), then $VISUAL / $EDITOR when they name a GUI editor we know
      (`code --wait` counts, `vim` is skipped: a server cannot open a terminal editor),
   2. the editor whose integrated terminal we run in (TERM_PROGRAM, ZED_TERM, JetBrains'
      TERMINAL_EMULATOR, macOS __CFBundleIdentifier, VS Code-fork paths in VSCODE_* vars),
@@ -41,12 +41,12 @@ _HOST_HINTS = (("cursor", "cursor"), ("todesktop", "cursor"), ("windsurf", "wind
 
 def detect(env: Mapping[str, str] = os.environ) -> tuple[str, str]:
     """-> (editor key, why it was chosen)."""
-    for var in ("CALLLENS_EDITOR", "VISUAL", "EDITOR"):
+    for var in ("VIBESEQUENCE_EDITOR", "VISUAL", "EDITOR"):
         value = env.get(var, "").strip()
         if not value:
             continue
         name = Path(value.split()[0]).name.lower()
-        if var == "CALLLENS_EDITOR" and name in EDITORS:
+        if var == "VIBESEQUENCE_EDITOR" and name in EDITORS:
             return name, f"${var}"
         if name in _CLI_KEY:
             return _CLI_KEY[name], f"${var}={value}"

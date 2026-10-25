@@ -1,7 +1,7 @@
 """Build pipeline:  files -> ModuleFacts (cached) -> resolve -> entry points -> Graph
 
 Scalability notes:
-  * Extraction is per-file and cached by content hash in calllens-out/cache.json.
+  * Extraction is per-file and cached by content hash in vibesequence-out/cache.json.
     A rebuild on a 2000-file repo touches only the files whose hash changed.
   * Resolution is a cheap dictionary chain, O(total calls).
   * Flows are NOT precomputed. The viewer / CLI expands a flow lazily from the
@@ -24,7 +24,7 @@ from .resolver import Resolver
 
 CACHE_VERSION = 2          # bump when extractor output changes, so stale facts are reparsed
 IGNORE_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "dist", "build",
-               "calllens-out", "graphify-out", ".mypy_cache", ".pytest_cache", "site-packages",
+               "vibesequence-out", "graphify-out", ".mypy_cache", ".pytest_cache", "site-packages",
                ".next", ".nuxt", ".svelte-kit", ".turbo", ".vercel", "coverage", ".cache", ".strapi"}
 TS_EXTS = {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"}
 
@@ -93,7 +93,7 @@ def build(root: Path, out_dir: Path, use_cache: bool = True) -> Graph:
         "functions": len(resolver.functions), "entries": len(entries),
         **res_stats, "seconds": round(time.time() - t0, 3),
         "import_roots": import_roots, "import_warning": import_warning or (
-            f"{ts_skipped} TypeScript/JavaScript files skipped: pip install 'calllens[ts]'" if ts_skipped else ""),
+            f"{ts_skipped} TypeScript/JavaScript files skipped: pip install 'vibesequence[ts]'" if ts_skipped else ""),
     }
     graph = Graph(functions=resolver.functions, entries=entries, stats=stats)
     cache_path.write_text(json.dumps(new_cache))
@@ -104,7 +104,7 @@ def build(root: Path, out_dir: Path, use_cache: bool = True) -> Graph:
     # and `serve` can tell "the flows changed" from "someone ran build again"
     stats["version"] = hashlib.sha1(json.dumps(shape, sort_keys=True).encode()).hexdigest()[:12]
     stats["changed"] = shape != old
-    # keep the graph from before the last CHANGE (not the last build) for `calllens diff`;
+    # keep the graph from before the last CHANGE (not the last build) for `vibesequence diff`;
     # a no-op rebuild must not overwrite it
     if old is not None and stats["changed"]:
         graph_path.replace(out_dir / "graph.prev.json")
@@ -113,10 +113,10 @@ def build(root: Path, out_dir: Path, use_cache: bool = True) -> Graph:
 
 
 def _apply_import_roots(modules: list[ModuleFacts]) -> tuple[list[str], str]:
-    """Built one level too high (monorepo, `calllens build .` above the project)? Then imports say
+    """Built one level too high (monorepo, `vibesequence build .` above the project)? Then imports say
     `app.repos.base` while the file's module is `services.app.repos.base`, and nothing resolves.
     Find such prefixes (>= 3 imports match one folder unambiguously) and strip them from module
-    names, as if calllens had been run inside that folder. Skipped, with a warning, when stripping
+    names, as if vibesequence had been run inside that folder. Skipped, with a warning, when stripping
     would collide with an existing module or the match is ambiguous."""
     known = {m.module for m in modules}
     prefixes_of: dict[str, set[str]] = defaultdict(set)     # "app.repos.base" -> {"services"}
@@ -164,7 +164,7 @@ def _apply_import_roots(modules: list[ModuleFacts]) -> tuple[list[str], str]:
 
 def _shape(d: dict) -> tuple:
     # ponytail: line shifts count as a change, so a comment-only edit rotates graph.prev.json and
-    # `calllens diff` then says "no flow changes"; compare line-free shapes if that bites
+    # `vibesequence diff` then says "no flow changes"; compare line-free shapes if that bites
     return d["functions"], d["entries"]          # everything but stats (timings)
 
 

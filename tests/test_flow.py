@@ -7,9 +7,9 @@ import textwrap
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from calllens import builder, cli  # noqa: E402
-from calllens.flow import expand, project  # noqa: E402
-from calllens.render.mermaid import render  # noqa: E402
+from vibesequence import builder, cli  # noqa: E402
+from vibesequence.flow import expand, project  # noqa: E402
+from vibesequence.render.mermaid import render  # noqa: E402
 
 APP = textwrap.dedent('''
     def save(x): pass
@@ -71,9 +71,9 @@ def test_serve_open_guards():
     import urllib.error
     import urllib.request
     from http.server import ThreadingHTTPServer
-    from calllens import editor, serve
+    from vibesequence import editor, serve
 
-    editor.EDITORS["missing"] = ("Missing", lambda f, n: ["calllens-no-such-editor", f])
+    editor.EDITORS["missing"] = ("Missing", lambda f, n: ["vibesequence-no-such-editor", f])
     with tempfile.TemporaryDirectory() as d:
         root = Path(d)
         (root / "app.py").write_text("x = 1\n")
@@ -96,14 +96,14 @@ def test_serve_open_guards():
 
 
 def test_detect_editor():
-    from calllens.editor import detect
+    from vibesequence.editor import detect
     assert detect({"TERM_PROGRAM": "zed", "ZED_TERM": "true"})[0] == "zed"
     assert detect({"TERM_PROGRAM": "vscode", "__CFBundleIdentifier": "com.microsoft.VSCode"})[0] == "vscode"
     assert detect({"TERM_PROGRAM": "vscode", "__CFBundleIdentifier": "com.todesktop.230313mzl4w4u92"})[0] == "cursor"
     assert detect({"VISUAL": "code --wait"})[0] == "vscode"
     assert detect({"EDITOR": "vim", "TERM_PROGRAM": "vscode"})[0] == "vscode"           # terminal editors skipped
     assert detect({"TERMINAL_EMULATOR": "JetBrains-JediTerm", "__CFBundleIdentifier": "com.jetbrains.intellij"})[0] == "idea"
-    assert detect({"CALLLENS_EDITOR": "pycharm", "TERM_PROGRAM": "zed"})[0] == "pycharm"  # explicit wins
+    assert detect({"VIBESEQUENCE_EDITOR": "pycharm", "TERM_PROGRAM": "zed"})[0] == "pycharm"  # explicit wins
 
 
 def test_install_keeps_user_content():
@@ -111,7 +111,7 @@ def test_install_keeps_user_content():
     import json
     with tempfile.TemporaryDirectory() as d:
         md, settings = Path(d, "CLAUDE.md"), Path(d, ".claude", "settings.local.json")
-        md.write_text("# Proj\n\nKeep tests green.\n\n## calllens (old)\nold text\n\n## Deploy\nmake deploy\n")
+        md.write_text("# Proj\n\nKeep tests green.\n\n## vibesequence (old)\nold text\n\n## Deploy\nmake deploy\n")
         settings.parent.mkdir()
         settings.write_text(json.dumps({"permissions": {"allow": ["Bash(make:*)"]}}))
         for _ in range(2):
@@ -120,7 +120,7 @@ def test_install_keeps_user_content():
                 cli._install_hook(settings)
         text, conf = md.read_text(), json.loads(settings.read_text())
         assert "Keep tests green." in text and "## Deploy" in text and "old text" not in text
-        assert text.count("## calllens") == 1
+        assert text.count("## vibesequence") == 1
         assert conf["permissions"] == {"allow": ["Bash(make:*)"]}
         assert len(conf["hooks"]["PostToolUse"]) == 1
 
@@ -156,7 +156,7 @@ def test_typescript_next_and_express():
     try:
         import tree_sitter_typescript  # noqa: F401
     except ImportError:
-        print("skip test_typescript_next_and_express: pip install 'calllens[ts]'")
+        print("skip test_typescript_next_and_express: pip install 'vibesequence[ts]'")
         return
     example = Path(__file__).resolve().parents[1] / "examples" / "next_shop"
     with tempfile.TemporaryDirectory() as d:
