@@ -58,10 +58,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 /* ---------------- sidebar: workspace + page tree ---------------- */
 .nav { display: flex; flex-direction: column; min-height: 0; background: var(--nav); box-shadow: inset -1px 0 0 var(--line-2); }
-.workspace { display: flex; align-items: center; gap: 8px; margin: 6px 8px 2px; padding: 6px 8px; border-radius: 6px; min-width: 0; }
-.workspace b { display: block; font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.workspace small { display: block; color: var(--muted); font-size: 12px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.avatar { display: grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 4px; background: var(--avatar); color: var(--avatar-ink); font-size: 11px; font-weight: 600; }
+.workspace { display: flex; align-items: center; gap: 10px; margin: 8px 8px 4px; padding: 6px 8px; border-radius: 6px; min-width: 0; }
+.workspace:hover { background: var(--hover); }
+.workspace b { display: block; font-weight: 600; font-size: 15px; line-height: 20px; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.workspace small { display: block; color: var(--muted); font-size: 12px; line-height: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.avatar { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 7px; background: var(--avatar); color: var(--avatar-ink); font-size: 12px; font-weight: 700; letter-spacing: .02em; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
 .search { display: flex; align-items: center; gap: 8px; margin: 2px 8px 6px; padding: 0 8px; height: 30px; border-radius: 6px; color: var(--muted); }
 .search:hover, .search:focus-within { background: var(--hover); }
 .search svg { flex: none; fill: currentColor; }
@@ -1168,7 +1169,9 @@ document.addEventListener('keydown', e => {
   if (e.key === '0') { state.zoom = 'fit'; applyZoom(); }
   if (e.key === '[' || e.key === ']') { const i = LEVELS.indexOf(state.level) + (e.key === ']' ? 1 : -1); if (LEVELS[i]) { state.level = LEVELS[i]; update(); } }
 });
-$('avatar').textContent = document.title.replace('calllens — ', '').slice(0, 2).toUpperCase();
+{ const name = document.title.replace('calllens — ', ''); let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  $('avatar').textContent = name.slice(0, 2).toUpperCase();
+  $('avatar').style.background = `hsl(${h % 360} 55% 48%)`; $('avatar').style.color = '#fff'; } // ponytail: hashed hue, no palette table
 
 initMermaid();
 (function start() {

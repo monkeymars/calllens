@@ -20,6 +20,6 @@ def write(graph: Graph, path: Path) -> None:
     html = (TEMPLATE.read_text(encoding="utf-8")
             .replace("__GRAPH_JSON__", json.dumps(graph.to_json()).replace("</", "<\\/"))
             .replace("__PROJECT__", Path(s["root"]).name)
-            .replace("__STATS__", f"{s['functions']} functions, {s['entries']} flows")
+            .replace("__STATS__", f"{s['functions']} functions · {s['entries']} flows")
             .replace("__EDITOR__", editor.detect()[0]))
     path.write_text(html, encoding="utf-8")
