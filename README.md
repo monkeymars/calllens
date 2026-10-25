@@ -18,6 +18,19 @@ and draws each one as a sequence diagram:
 
 Supports Python (stdlib only) and TypeScript / JavaScript (Next.js, Express).
 
+## Does it save tokens?
+
+We benchmarked Claude Code on the same tasks with and without vibesequence. Every run passed in both setups.
+
+| task type | input tokens | cost | turns |
+|---|---|---|---|
+| understanding a flow ("what happens when…", "what breaks if I change…") | **−23%** | **−18%** | 8 → 4 |
+| small edits | +19% | +15% | 5.5 → 6 |
+
+Impact questions save the most: one `vibesequence callers` call replaced 6–7 greps and reads (−53% tokens).
+For edits, the agent still has to read the files it changes, so on the tiny example projects the map is
+extra overhead. Full method, per-task results and caveats: [docs/benchmark](docs/benchmark/README.md).
+
 ## Quick start
 
 ```bash
