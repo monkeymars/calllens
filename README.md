@@ -1,13 +1,9 @@
 # vibesequence
 
-Turn your codebase into **zoomable sequence diagrams**, and use them as a map while you vibe code with an AI assistant.
-
-A call graph tells you *what is connected to what*. vibesequence tells you
+Turn your codebase into **zoomable sequence diagrams**, and use them as a map while you vibe code with an AI assistant. A call graph tells you *what is connected to what*. vibesequence tells you
 *when a user does X, who calls whom, and in what order*.
 
 ![vibesequence viewer: GET /api/me as a sequence diagram](docs/preview.png)
-
-<!-- demo video: drag demo/videos/vibesequence-demo.webm into this README in GitHub's web editor and paste the URL here -->
 
 ## Why
 
