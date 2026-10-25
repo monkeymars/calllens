@@ -1,4 +1,4 @@
-"""Data model for seqgram.
+"""Data model for calllens.
 
 Everything downstream (resolver, flow builder, zoom projection, renderers)
 works only on these structures, so a new language extractor only has to

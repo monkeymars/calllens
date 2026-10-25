@@ -1,4 +1,4 @@
-"""Write the self-contained interactive viewer (seqgram-out/index.html).
+"""Write the self-contained interactive viewer (calllens-out/index.html).
 
 The viewer embeds graph.json and re-implements expand/project/render in
 JavaScript so zooming is instant and needs no server. Mermaid is loaded from

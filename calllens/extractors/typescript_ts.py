@@ -1,4 +1,4 @@
-"""TypeScript / JavaScript extractor on tree-sitter (optional: `pip install seqgram[ts]`).
+"""TypeScript / JavaScript extractor on tree-sitter (optional: `pip install calllens[ts]`).
 
 Produces the same ModuleFacts as the Python extractor, so resolver, zoom, viewer, diff and hook
 work unchanged. Mapping onto the Python-shaped model:

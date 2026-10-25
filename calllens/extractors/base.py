@@ -22,7 +22,7 @@ class Extractor(Protocol):
 def get_extractors() -> dict[str, Extractor]:
     from .python_ast import PythonAstExtractor
     available: list[Extractor] = [PythonAstExtractor()]
-    try:                                                  # optional: pip install seqgram[ts]
+    try:                                                  # optional: pip install calllens[ts]
         from .typescript_ts import TypeScriptExtractor
         available.append(TypeScriptExtractor())
     except ImportError:

@@ -1,4 +1,4 @@
-"""`seqgram serve`: the viewer over http://127.0.0.1 plus POST /__open, which opens a source file
+"""`calllens serve`: the viewer over http://127.0.0.1 plus POST /__open, which opens a source file
 in your editor through the editor's own CLI (`code -g file:line`, ...).
 
 Why a server: editor URL schemes (vscode://file/...) are dropped by embedded browsers such as
@@ -95,10 +95,10 @@ def run(out: Path, port: int, refresh: Callable[[], object]) -> None:
         except OSError:
             continue
     else:
-        raise SystemExit(f"seqgram: ports {port}-{port + 19} are all in use; pass --port")
+        raise SystemExit(f"calllens: ports {port}-{port + 19} are all in use; pass --port")
     url = f"http://127.0.0.1:{server.server_address[1]}/"
-    print(f"seqgram: serving {out}/ at {url}  (Ctrl+C to stop)")
-    print(f"  source links open in {editors.EDITORS[editor][0]} ({why}); override with SEQGRAM_EDITOR=<{'|'.join(editors.EDITORS)}>")
+    print(f"calllens: serving {out}/ at {url}  (Ctrl+C to stop)")
+    print(f"  source links open in {editors.EDITORS[editor][0]} ({why}); override with CALLLENS_EDITOR=<{'|'.join(editors.EDITORS)}>")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
