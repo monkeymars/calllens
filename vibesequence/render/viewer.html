@@ -388,7 +388,8 @@ body.zen .page { padding: 0; }
 </div>
 
 <script id="graph" type="application/json">__GRAPH_JSON__</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"
+        integrity="sha512-6a80OTZVmEJhqYJUmYd5z8yHUCDlYnj6q9XwB/gKOEyNQV/Q8u+XeSG59a2ZKFEHGTYzgfOQKYEBtrZV7vBr+Q==" crossorigin="anonymous"></script>
 <script>
 /* ===================================================================
    JavaScript port of vibesequence/flow.py + render/mermaid.py.
@@ -769,7 +770,9 @@ async function renderDiagram() {
     markChanges(order, root);
   } catch (e) {
     head = null; syncStickyHead(); setupPlayer([], new Map()); renderChanges(null);
-    box.innerHTML = `<div class="err">Mermaid could not render this flow:\n${e.message || e}\n\n${text}</div>`;
+    const err = document.createElement('div'); err.className = 'err';      // text holds names from the code: never parse it as HTML
+    err.textContent = `Mermaid could not render this flow:\n${e.message || e}\n\n${text}`;
+    box.replaceChildren(err);
   }
 }
 

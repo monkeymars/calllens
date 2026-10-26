@@ -7,9 +7,11 @@ HTTP call to this process works in any browser.
 
 The editor is the user's default, detected once at start-up (see editor.py), not chosen by the page.
 
-Safety: binds to 127.0.0.1 only; /__open accepts same-origin requests only (Origin must match Host,
-so other websites cannot trigger it); the file must live inside the built project; the editor comes
-from a fixed table and is started without a shell.
+Safety: binds to 127.0.0.1 only; every request must carry Host 127.0.0.1:<port> or localhost:<port>
+(blocks DNS rebinding: a website whose domain resolves to 127.0.0.1 sends its own Host); POSTs must be
+same-origin (Origin must match Host, so other websites cannot trigger them); /__open only opens source
+files inside the built project (never e.g. a .command file through the OS default app); the editor
+comes from a fixed table and is started without a shell.
 """
 from __future__ import annotations
 
@@ -23,10 +25,12 @@ from pathlib import Path
 from typing import Callable
 
 from . import editor as editors
+from .extractors.base import get_extractors
 
 
 def _handler(out: Path, root: Path, refresh: Callable[[], object], editor: str):
     name, argv_for = editors.EDITORS[editor]
+    sources = set(get_extractors())               # the viewer only links to files vibesequence parsed
     lock = threading.Lock()                        # page loads and polls can arrive together: one build at a time
 
     def fresh():
@@ -34,7 +38,13 @@ def _handler(out: Path, root: Path, refresh: Callable[[], object], editor: str):
             return refresh()
 
     class Handler(SimpleHTTPRequestHandler):
+        def _foreign_host(self):
+            port = self.server.server_address[1]
+            return self.headers.get("Host") not in (f"127.0.0.1:{port}", f"localhost:{port}")
+
         def do_GET(self):
+            if self._foreign_host():
+                return self._reply(403, "unexpected Host header")
             path = self.path.split("?")[0]
             if path == "/__version":               # live viewer polls this: rebuild, report the graph version
                 graph = fresh()
@@ -46,6 +56,8 @@ def _handler(out: Path, root: Path, refresh: Callable[[], object], editor: str):
         def do_POST(self):
             if self.path not in ("/__open", "/__baseline"):
                 return self.send_error(404)
+            if self._foreign_host():
+                return self._reply(403, "unexpected Host header")
             if self.headers.get("Origin") != f"http://{self.headers.get('Host', '')}":
                 return self._reply(403, "cross-origin request refused")
             if self.path == "/__baseline":         # "Mark as seen": changes are now measured from here
@@ -60,6 +72,8 @@ def _handler(out: Path, root: Path, refresh: Callable[[], object], editor: str):
                 return self._reply(400, "bad request")
             if not path.is_relative_to(root) or not path.is_file():
                 return self._reply(403, "file is outside the project")
+            if path.suffix not in sources:
+                return self._reply(403, "not a source file")
             exe = shutil.which(argv[0])
             if not exe:
                 return self._reply(404, f"`{argv[0]}` is not on PATH")
