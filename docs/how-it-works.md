@@ -1,290 +1,261 @@
-# vibesequence
+# How vibesequence works
 
-Ubah codebase menjadi **user sequence diagram yang bisa di-zoom**, lalu pakai
-diagram itu sebagai peta saat vibe coding bersama AI assistant.
+## In one minute
 
-Graphify menjawab *"apa berhubungan dengan apa"* (graph). vibesequence menjawab
-*"kalau user melakukan X, siapa memanggil siapa, dalam urutan apa"* (sequence).
+vibesequence **reads** your code without running it, then draws *who calls whom, in order* as a
+sequence diagram. It takes six steps:
 
-```
-pip install -e .                   # Python project (stdlib saja)
-pip install -e ".[ts]"             # + TypeScript / JavaScript (tree-sitter)
-vibesequence build .                    # parse repo  ->  vibesequence-out/
-open vibesequence-out/index.html        # viewer interaktif: zoom in/out per flow
-vibesequence list                       # daftar flow (entry point)
-vibesequence show "POST /orders" --level class --depth 4     # Mermaid untuk satu flow
-vibesequence show "POST /orders" --format text               # tree ringkas + file:line (paling hemat untuk AI)
-vibesequence callers OrderRepo.create   # siapa memanggil fungsi ini + flow mana yang terdampak
-vibesequence diff                       # flow apa yang berubah di build terakhir
-vibesequence serve                      # viewer di http://127.0.0.1:8765, link Source membuka file di editor
-vibesequence install                    # instruksi di CLAUDE.md + hook Claude Code (flow yang berubah tampil tiap edit)
-```
+1. **Read each file.** For every function, note every call it makes, **in order**, and whether the call
+   sits inside an `if`, a loop or a `try/except`.
+2. **Connect calls to the real functions.** The text `self.orders.create` is traced to the function it
+   actually reaches, `OrderRepo.create`. Calls that can't be traced (into a library like `requests`) are
+   kept as "external".
+3. **Find the starting points.** Every route (`POST /orders`), CLI command or handler is one "flow". This
+   is where the **User** actor starts.
+4. **Walk from the start.** From `POST /orders`, follow the calls one by one, down to a chosen depth.
+   The result is a tree of steps in order.
+5. **Zoom.** The core idea: the same tree can be viewed from different distances.
+   - far (package): `api → services → repos → infra`
+   - closer (class): `OrderService → OrderRepo → PaymentGateway`
+   - closest (function): every method is its own lane
 
-Output `vibesequence-out/`:
+   Calls that stay inside one box are hidden; only calls between boxes become arrows.
+6. **Draw.** For **you**, a diagram you can zoom, click and play step by step. For the **AI**, a compact
+   text version with the `file:line` of every step, so it doesn't have to read many files.
 
-| file | untuk siapa | isi |
-|---|---|---|
-| `index.html` | manusia | viewer: pilih flow, pilih level (package / module / class / function), klik pesan untuk zoom in, breadcrumb untuk zoom out |
-| `FLOWS.md` | AI assistant | indeks: satu baris per flow (label, id, `file:line`); diagram diambil per flow lewat `show` |
-| `graph.prev.json` | `vibesequence diff` | graph sebelum perubahan terakhir |
-| `graph.json` | tooling | call graph terurut: fungsi, call site, konteks control-flow |
-| `cache.json` | vibesequence | hash per file untuk build inkremental |
+**Analogy:** it's like drawing a parcel's delivery route from the address labels at each post office,
+without actually sending anything. You can view the map at city scale (package) or street scale (function).
 
-Bahasa yang didukung:
+**Limit:** because it only reads the code, both branches of an `if` are drawn. It's a map of every
+possible path, not a recording of one run.
 
-| bahasa | extractor | dependency | entry point yang dikenali |
-|---|---|---|---|
-| Python | `extractors/python_ast.py` (stdlib `ast`) | tidak ada | route FastAPI/Flask, CLI click/typer, task, `main` |
-| TypeScript / JavaScript | `extractors/typescript_ts.py` (tree-sitter) | `pip install vibesequence[ts]` | Next.js `app/**/route.ts` (`export async function POST`, `export const GET = …`), `pages/api/**`, Express `router.get('/x', …)` |
-
-Bahasa lain ditambahkan lewat satu kelas extractor yang mengeluarkan `ModuleFacts` (lihat *Scaling*).
-
-### TypeScript / JavaScript
-
-Extractor TS memetakan kode ke model yang sama dengan Python, jadi viewer, Play, live, diff,
-`callers` dan hook bekerja tanpa perubahan:
-
-* modul = path file (`lib/repos/orderRepo.ts` → `lib.repos.orderRepo`); import diselesaikan seperti
-  `tsc`: relatif `./x`, alias `paths` dari `tsconfig.json`/`jsconfig.json` terdekat (`@/lib/...`),
-  file `index`; package (`next/server`, `pg`) jadi participant library;
-* `this.repo.save()` diselesaikan lewat tipe field: parameter property constructor
-  (`private repo: OrderRepo`), field bertipe, `this.x = new X()`; juga instance yang di-export modul
-  lain (`export const orderService = new OrderService(...)`) dan default export;
-* callback `map/forEach/filter/...` digambar sebagai `loop` di fungsi pemanggilnya, `.catch(cb)`
-  sebagai cabang error; global yang noise (`console`, `JSON`, `Promise.all`) dibuang, `fetch`
-  dipertahankan sebagai boundary HTTP; klien library di level modul (`const pool = new Pool()`)
-  tampil sebagai library;
-* file framework yang namanya generik tampil bersama foldernya: `orders/route`, `[id]/route`.
-
-Contoh: `examples/next_shop` (Next.js App Router + satu router Express, domain sama dengan
-`examples/shop_api`).
-
-Batasan prototipe: NestJS decorator, React component tree, dan handler Express yang di-import
-dari file lain belum dikenali sebagai entry point; resolusi tipe tetap heuristik (tanpa `tsc`).
-
----
-
-## Cara kerja (pipeline)
+## The engine in detail
 
 ```
- source files
-      │  1. extract   (per file, di-cache per hash)
-      ▼
- ModuleFacts  = fungsi + CALL SITE TERURUT + konteks (if/loop/try) + hint tipe + import
-      │  2. resolve    (heuristik: nama -> definisi, termasuk inheritance)
-      ▼
- Graph        = call graph dengan URUTAN  (ini bedanya dengan graph biasa)
-      │  3. detect entries   (route, cli, handler, main, root tanpa caller)
-      ▼
- Entry points = daftar "user flow"
-      │  4. expand    (DFS terurut dari entry, batas depth, cycle guard)
-      ▼
- Call TREE    = satu pohon per flow; waktu turun ke bawah, nesting = activation
-      │  5. project   (ZOOM: pilih rung hierarki sebagai participant, calls internal diratakan)
-      ▼
- Message tree = pesan antar participant pada level tertentu
-      │  6. render    (Mermaid sequenceDiagram; fragment alt/loop/opt dari konteks)
-      ▼
- Mermaid text ->  viewer (manusia)  /  FLOWS.md & `show` (AI)
+source files ──1. extract──▶ facts per file ──2. resolve──▶ ordered call graph (graph.json)
+                                                                │
+                                                       3. detect entry points ("user flows")
+                                                                │  per flow, on demand:
+                                     4. expand ──▶ call tree ──5. project (zoom) ──▶ messages ──6. render ──▶ Mermaid / text
 ```
 
-### 1. Extract: kenapa urutan dan konteks yang direkam
+Steps 1–3 run on `vibesequence build` and are cached per file. Steps 4–6 run each time you open a flow
+or change the zoom, so they are cheap. All examples below are real output from `examples/shop_api`.
 
-Sequence diagram butuh tiga hal yang tidak ada di call graph biasa:
+### 1. Extract: calls in order, with their context
 
-* **urutan** pemanggilan di dalam satu body (`calls[i].order`),
-* **konteks control-flow** setiap call (`["loop", "try"]`) supaya bisa dirender sebagai
-  `loop` / `alt` / `opt`,
-* **urutan evaluasi** yang benar: Python mengevaluasi receiver dan argumen dulu,
-  jadi `a.b().c(d())` direkam sebagai `a.b`, `d`, `a.b().c`.
+`extractors/python_ast.py` (Python's `ast`, no dependencies) and `extractors/typescript_ts.py`
+(tree-sitter, `pip install -e ".[ts]"`) record, for every function, each call as a `CallSite`
+(`model.py`):
 
-Extractor juga mencatat *petunjuk tipe* murah: `self.repo = OrderRepo()`,
-`x: Foo`, `def f(svc: OrderService)`, plus daftar base class dan import map.
-Semua ini per file, jadi bisa di-cache dan diparalelkan.
+- **`expr`**: the call as written, e.g. `self.payments.charge`;
+- **`order`**: its position in the body. Evaluation order is respected: `a.b().c(d())` is recorded as
+  `a.b`, `d`, `a.b().c`;
+- **`context`**: the control flow around it, e.g. `["loop:for item in items"]`, `["except:Exception"]`.
+  The condition text is kept, so the diagram can say `alt if not user`, not just `alt`.
 
-### 2. Resolve: dari teks `self.repo.save` ke definisi
+They also record cheap type hints (`self.orders = OrderRepo()`, `svc: OrderService`), base classes and
+imports. `OrderService.place` after extraction and resolution:
 
-Rantai lookup murah, berhenti di yang pertama cocok:
+```
+ 2  self.products.get              [loop:for item in items]  -> BaseRepo.get  (receiver ProductRepo)
+ 6  self.orders.create             []                        -> OrderRepo.create
+ 7  self.payments.charge           [try]                     -> PaymentGateway.charge
+ 8  self.orders.mark_failed        [except:Exception]        -> OrderRepo.mark_failed
+ 9  self.products.decrement_stock  [loop:for item in items]  -> ProductRepo.decrement_stock
+```
 
-1. nama polos `validate()` → modul yang sama → import → nested def
-2. `self.method()` → kelas sendiri → base class (inheritance, rekursif)
-3. `self.attr.method()` → hint `Class.attr = OrderRepo` → `OrderRepo.method`
-4. `local.method()` → anotasi parameter / assignment lokal
-5. `module.func()` → import map
-6. `Class.method()` / `Class().method()`
-7. objek level modul `repo.save()` → hint modul
+Everything is per file, so results are cached by content hash in `cache.json`. A rebuild only re-parses
+changed files (Flask, 24 files and 350 functions: 0.07 s cold, 0.016 s warm).
 
-Yang tidak terpecahkan **tetap dipertahankan** sebagai participant eksternal
-dan diklasifikasikan: `lib` (nama ter-import: `requests.post`), `global`
-(objek modul: `_conn.execute`), `local` (variabel lokal: `resp.json()`).
-Viewer memakai klasifikasi ini sebagai filter noise: default hanya `lib`,
-karena batas dengan library (DB, HTTP, queue) justru yang paling penting di
-sequence diagram.
+**TypeScript / JavaScript** maps onto the same model, so everything after this step is shared:
 
-Untuk inherited method, resolver menyimpan **receiver** (`self.orders.get` →
-definisi `BaseRepo.get`, receiver `OrderRepo`). Saat `expand`, kelas dinamis
-`self` ikut diwariskan ke body method yang dipanggil, sehingga
-`Flask.handle_exception` → `App._find_error_handler` → `self._get_exc_class…`
-tetap digambar sebagai `Flask`, bukan `Scaffold`.
+- A module is its file path: `lib/repos/orderRepo.ts` becomes `lib.repos.orderRepo`.
+- Imports resolve like `tsc`: relative paths, `paths` aliases from the nearest `tsconfig.json`/`jsconfig.json`
+  (`@/lib/...`), and `index` files. Packages such as `next/server` become library participants.
+- `this.repo.save()` resolves through field types: constructor parameter properties, typed fields,
+  `this.x = new X()`, and exported instances (`export const orderService = new OrderService(...)`).
+- Callbacks passed to `map`/`forEach`/`filter` are drawn as a `loop`, and `.catch(cb)` as an error branch.
+- Generic framework file names keep their folder: `orders/route`, `[id]/route`.
 
-### 3. Entry points: aktor "User" mulai dari mana
+### 2. Resolve: from `self.orders.create` to a definition
 
-Prioritas: decorator route (`@router.post("/orders")` → label `POST /orders`),
-command CLI (`click`/`typer`), handler (`@task`, `on_*`, `handle_*`), `main`,
-lalu fungsi ber-in-degree 0 yang punya call (bukan test, bukan `@property`).
+`resolver.py` tries a chain of cheap rules and stops at the first match:
 
-Untuk kode tanpa route/CLI (library, worker, kode non-web) semua flow berupa `root`; vibesequence
-mengurutkannya dengan skor = jumlah fungsi milikmu yang dijangkau, dikurangi untuk fungsi private
-(`_x`), nested, dan modul private. `list`, `FLOWS.md` dan sidebar menampilkan 20 teratas (sidebar:
-"Show N more"; `list --all` dan pencarian tetap mencakup semuanya).
+1. plain name `validate()` → same module → imports → nested def;
+2. `self.method()` → own class → base classes (recursively);
+3. `self.attr.method()` → type hint `self.attr = OrderRepo()` → `OrderRepo.method`;
+4. `local.method()` → parameter annotation or local assignment;
+5. `module.func()` → import map;
+6. `Class.method()` / `Class().method()`;
+7. module-level object `repo.save()` → module hint.
 
-**Import root otomatis.** Kalau build dijalankan satu folder terlalu tinggi (monorepo, atau
-`vibesequence build .` di atas project), import `app.repos.base` tidak cocok dengan modul
-`services.app.repos.base`. vibesequence mendeteksi prefix seperti itu (>= 3 import cocok ke satu folder)
-dan menghapusnya dari nama modul, seolah dijalankan di dalam folder itu (`import root: services/`
-tampil di output build). Kalau cocok ke beberapa folder sekaligus atau bentrok dengan modul lain,
-vibesequence tidak menebak dan memberi peringatan untuk build satu project saja.
+There are two details:
+
+- **Inherited methods keep the real receiver.** `self.products.get` resolves to `BaseRepo.get` with
+  receiver `ProductRepo`, so the diagram says `ProductRepo.get`.
+- **Unresolved calls are kept and classified:**
+  - `lib`: an imported name, e.g. `requests.post`;
+  - `global`: a module-level object, e.g. `_conn.execute`;
+  - `local`: a local variable, e.g. `resp.json()`.
+
+  The viewer's **Externals** filter uses this classification. By default it shows `lib` only, because
+  the boundaries to databases, HTTP and queues matter most in a sequence diagram.
+
+**Import root.** If you build one folder too high (a monorepo, or `vibesequence build .` above the project),
+`import app.repos.base` no longer matches the module `services.app.repos.base`. vibesequence detects the
+prefix (three or more imports matching one folder) and strips it. It warns instead of guessing when the
+match is ambiguous.
+
+The output is `graph.json`: a call graph that keeps order and context.
+
+### 3. Entry points: where "User" starts
+
+`entrypoints.py` assigns kinds in priority order:
+
+1. route decorators: `@router.post("/orders")` → `POST /orders`;
+2. Next.js `app/**/route.ts` exports, `pages/api/**`, and Express `router.get('/x', …)`;
+3. CLI commands (click, typer);
+4. handlers (`@task`, `on_*`, `handle_*`);
+5. `main`;
+6. functions nothing calls (`root`), ranked by how much of your code they reach, with penalties for
+   private and nested functions.
+
+`list`, `FLOWS.md` and the sidebar show the top 20 roots. The rest are behind "Show N more".
 
 ### 4. Expand: call graph → call tree
 
-DFS terurut dari entry point. Node yang sudah ada di jalur saat ini ditandai
-`↺` (rekursi/cycle), node di luar `--depth` ditandai `…`. Tanda `…` itu
-sinyal "klik untuk zoom in". Pohon dibangun **lazy** per flow, tidak
-disimpan; dengan `max_depth` kompleksitasnya terikat.
+`flow.py` (`expand`) walks from the entry point depth-first, in source order:
 
-### 5. Project: inti dari zoom
+- a call already on the current path is marked `↺` (cycle);
+- anything deeper than `--depth` is marked `…`, the "click to zoom in" signal;
+- inside an inherited method, `self` keeps its dynamic class, so `self.x()` is drawn on the subclass.
 
-Setiap fungsi punya path hierarki `package > module > class > function`.
-Zoom level = memilih satu rung sebagai *participant*:
+Trees are built lazily per flow and never stored, so cost is bounded by `--depth`.
 
-```
-participant(f, "class")   = f.module : f.cls          (atau modul kalau fungsi bebas)
-participant(f, "module")  = f.module
-participant(f, "package") = f.module tanpa segmen terakhir   ("app.services")
-```
+### 5. Project: the zoom
 
-Lalu pohon diproyeksikan: pesan dipertahankan hanya jika
-`participant(caller) != participant(callee)`. Call yang **internal** (dalam
-participant yang sama) **diratakan**: anak-anaknya naik menggantikannya dan
-*mewarisi konteks control-flow-nya*, sehingga sebuah `for` di dalam method
-yang diratakan tetap muncul sebagai `loop` di level modul. Pesan leaf yang
-identik dan berurutan di-run-length-collapse (`log.info ×3`).
+Every function has a path `package > module > class > function`. A zoom level picks which rung is the
+**participant** (`flow.py`, `participant_of`):
 
-Hasilnya: **satu pohon, banyak proyeksi**. Level `package` memperlihatkan
-`api → services → repos → infra`; level `function` memperlihatkan setiap method.
-Zoom *in* ke satu pesan = `expand` ulang dengan root = callee pesan itu
-(breadcrumb di viewer adalah tumpukan root ini).
+| level | participant for `OrderRepo.create` |
+|---|---|
+| function | `app.repos.order_repo:OrderRepo.create` |
+| class | `OrderRepo` |
+| module | `order_repo` |
+| package | `app.repos` |
 
-### 6. Render: Mermaid untuk manusia, text untuk AI
+Projection then works like this:
 
-Mermaid dipilih karena bisa dirender di browser **dan** dibaca langsung oleh LLM.
-Satu flow "POST /orders" di level class ≈ 40 baris ≈ 400 token, versus ribuan
-token kalau assistant membaca 8 file sumber. Sibling berurutan dengan tag
-konteks sama dibungkus fragment: `if`+`else` → `alt/else`, `if` saja → `opt`,
-`loop`, `try`/`except` → `opt try` / `opt on error`.
+- A call that crosses participants becomes an **arrow**.
+- A call that stays inside one participant is **flattened**. Its children move up and inherit its
+  control-flow context, so a `for` loop inside a hidden helper still shows as a `loop` at module level.
+- Identical consecutive leaf calls collapse: `log.info ×3`.
 
-Logika expand/project/render ada dua: Python (`vibesequence/flow.py`,
-`render/mermaid.py`) untuk CLI, dan port JavaScript di `render/viewer.html`
-untuk viewer. Keduanya diuji menghasilkan teks identik (180 kombinasi
-parameter pada dua repo), supaya yang dilihat manusia = yang dibaca AI.
-
----
-
-Fragment membawa **kondisinya**, bukan hanya jenisnya: `alt if not user`,
-`loop for item in items`, `opt on error PaymentError`. Extractor menyimpan tag
-konteks sebagai `kind:teks` (`if:not user`); dua `if` terpisah yang berurutan
-tetap jadi dua fragment.
-
-`show --format text` mencetak flow yang sama sebagai tree berindentasi dengan
-`file:line` definisi setiap langkah, tanpa alias participant dan
-`activate/deactivate`. Di `POST /orders` (contoh) ukurannya ±2× lebih kecil dari
-Mermaid (1.4 KB vs 2.9 KB level class), dan assistant langsung tahu baris mana
-yang harus dibuka, tanpa grep:
+One tree, many views. At package level, `POST /orders` reads:
 
 ```
-orders.create_order  app/api/orders.py:10
-  auth.require_user  app/services/auth.py:16
+app.api ->> app.services: OrderService.place
+    loop for item in items
+        app.services ->> app.repos: ProductRepo.get
+    ...
+    opt on error Exception
+        app.services ->> app.repos: OrderRepo.mark_failed
+```
+
+Clicking a blue arrow in the viewer expands again with that call as the new root. The breadcrumb is the
+stack of those roots.
+
+### 6. Render: Mermaid for people, text for the AI
+
+`render/mermaid.py` writes a Mermaid `sequenceDiagram`. Consecutive messages with the same context are
+wrapped in fragments:
+
+- `if` with an `else` → `alt / else`;
+- `if` alone → `opt if …`;
+- a loop → `loop for item in items`;
+- `try` / `except` → `opt try` / `opt on error PaymentError`.
+
+Diagrams stop at 150 messages with a "zoom in for more" note.
+
+`render/text.py` prints the same flow as an indented tree with the `file:line` of every step. It is
+about half the size of the Mermaid version, and the assistant knows which lines to open without grepping:
+
+```
+OrderService.place  app/services/order_service.py:15
+  for item in items
+    ProductRepo.get …  app/repos/base.py:7
   try
-    OrderService.place  app/services/order_service.py:15
-      for item in items
-        ProductRepo.get  app/repos/base.py:7
-          db.query_one  app/infra/db.py:7
+    PaymentGateway.charge …  app/infra/payment.py:8
+  on error Exception
+    OrderRepo.mark_failed …  app/repos/order_repo.py:17
 ```
 
-`list`, `show`, dan `callers` menjalankan build inkremental dulu (±20 ms hangat),
-jadi assistant tidak pernah membaca graph yang basi.
+Mermaid was chosen because a browser can render it **and** an LLM can read it directly. The expand,
+project and render steps exist twice: in Python (`flow.py`, `render/mermaid.py`) for the CLI, and in
+JavaScript inside `render/viewer.html` for the viewer. Both are tested to produce identical text, so
+what you see is what the AI reads.
 
-## Viewer live: lihat apa yang diubah AI
+## Around the engine
 
-Dibuka lewat `vibesequence serve`, viewer mengikuti kode sendiri: setiap 1,5 detik (selama tab terlihat)
-ia meminta server membangun ulang secara inkremental; kalau ada flow yang berubah, diagram
-dirender ulang tanpa reload (indikator **Live** berkedip "Updated").
+### The viewer
 
-Perubahan diukur terhadap *baseline* = graph saat `serve` dimulai, bukan edit terakhir, karena
-agent biasanya mengedit beberapa kali dalam satu giliran:
+`render/html.py` embeds `graph.json` into one self-contained `index.html`. Zooming and level changes run
+in the browser with no server. The only external file is Mermaid, loaded from cdnjs with an integrity hash.
 
-* langkah baru digambar **hijau**; langkah yang hilang disebut di banner (`+2 steps · −1 removed: …`);
-* flow yang berubah diberi titik hijau di sidebar;
-* **▶ Play changes** memutar hanya langkah yang berubah; **Mark as seen** menjadikan kondisi
-  sekarang baseline baru.
+**Play** walks a flow one arrow at a time:
 
-Perbandingan memakai LCS atas urutan panah (urutan ikut dihitung, nomor baris tidak), jadi memindah
-kode atau menambah komentar tidak dianggap perubahan flow.
+- the current arrow is highlighted and the next ones are dimmed;
+- the two participants involved are highlighted;
+- the caption shows `A → B: method`, its `file:line`, and the fragment it sits in.
 
-## Memutar flow (Play)
+Keys: `Space` play/pause, `←` `→` step, `Esc` reset. Speed is 0.5×, 1× or 2×.
 
-Tombol **Play** di kiri bawah canvas menjalankan flow panah demi panah: panah aktif ditebalkan
-dan beranimasi dari pengirim ke penerima, langkah berikutnya diredupkan, participant yang terlibat
-disorot (juga di header sticky), dan canvas ikut scroll. Caption menampilkan `A → B: method`,
-`file:line` (klik untuk buka di editor) dan fragment tempat langkah itu berada (`in for item in items`).
-Kontrol: `Space` play/pause, `←` `→` per langkah, `Esc` reset, kecepatan 0.5× / 1× / 2×.
-Ini urutan statis hasil analisis, bukan rekaman eksekusi: kedua cabang `if` tetap diputar.
+### Live mode: see what changed
 
-## Membuka source di editor
+`vibesequence serve` serves the viewer on `127.0.0.1:8765`. Every 1.5 s the page asks the server to
+rebuild incrementally, and when a flow changes, the diagram re-renders without a reload.
 
-Properti **Source** (dan `file:line` di caption Play) membuka file pada baris fungsinya di **editor
-default kamu**. Browser tidak bisa tahu editor itu, jadi `vibesequence build` / `vibesequence serve` yang
-mendeteksinya dari terminal tempat ia dijalankan (`vibesequence/editor.py`), berurutan:
+Changes are measured against a **baseline**, the graph when `serve` started:
 
-1. `$VIBESEQUENCE_EDITOR` (`vscode|cursor|windsurf|antigravity|zed|pycharm|idea|system`), lalu `$VISUAL` /
-   `$EDITOR` bila berisi editor GUI yang dikenal (`code --wait` ya, `vim` dilewati);
-2. editor yang terminalnya sedang dipakai (`TERM_PROGRAM`, `ZED_TERM`, JetBrains `TERMINAL_EMULATOR`,
-   macOS `__CFBundleIdentifier`): jalankan vibesequence dari terminal VS Code dan link membuka VS Code;
-3. CLI editor pertama yang ada di `PATH`;
-4. aplikasi default OS untuk file itu (`open` / `xdg-open`, tanpa nomor baris).
+- new steps are drawn green, and removed steps are listed in a banner;
+- changed flows get a green dot in the sidebar;
+- **Play changes** plays only the new steps, and **Mark as seen** moves the baseline to now.
 
-* Dibuka sebagai file (`open vibesequence-out/index.html`): link memakai URL scheme editor hasil deteksi
-  saat build (`vscode://file/…:line`, `zed://file/…:line`, `pycharm://open?file=…&line=…`).
-* **Browser bawaan VS Code** (dan browser tertanam lain) memblokir URL scheme seperti itu. Pakai
-  `vibesequence serve` lalu buka `http://127.0.0.1:8765` (VS Code: *Simple Browser: Show*). Klik Source
-  meminta server membuka file lewat CLI editor (`code -g file:line`, `zed file:line`, `pycharm --line`).
-  CLI itu harus ada di `PATH` (VS Code: *Shell Command: Install 'code' command in PATH*).
-  Server hanya listen di 127.0.0.1, menolak request dari origin lain, dan hanya membuka file di dalam project.
+The diff is a longest-common-subsequence over the sequence of arrows. Order counts and line numbers don't,
+so moving code or adding comments is not a flow change.
 
-## Loop vibe coding: lihat step yang berubah setelah tiap edit
+### Opening source in your editor
 
-`vibesequence build . --hook` membangun ulang, membandingkan setiap flow (level
-function, tanpa nomor baris) dengan graph sebelumnya, lalu mencetak JSON hook
-Claude Code: `systemMessage` untuk **user**, `additionalContext` untuk **Claude**.
-Kalau tidak ada flow yang berubah, tidak mencetak apa pun.
+The **Source** link and the `file:line` in the Play caption open your editor at that line. A browser can't
+know your editor, so `vibesequence build` / `serve` detects it from the terminal they run in
+(`editor.py`), in this order:
 
-`vibesequence install` memasangnya otomatis di `.claude/settings.local.json` (personal, tidak di-commit,
-karena path perintahnya per mesin; aman dijalankan ulang, `--no-hook` untuk melewati). Isinya setara:
+1. `$VIBESEQUENCE_EDITOR`, then `$VISUAL` / `$EDITOR` when they name a known GUI editor;
+2. the editor whose terminal you are in;
+3. the first editor CLI on `PATH`;
+4. the OS default app.
 
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit",
-        "hooks": [{ "type": "command", "command": "cd \"$CLAUDE_PROJECT_DIR\" && vibesequence build . --hook" }]
-      }
-    ]
-  }
-}
-```
+On `file://` pages the link uses the editor's URL scheme (`vscode://file/…`). Embedded browsers such as
+VS Code's Simple Browser block those, so under `serve` the page asks the server to run the editor's CLI
+instead (`code -g file:line`).
 
-Setelah agent mengedit, user langsung melihat misalnya:
+The server only:
+- listens on 127.0.0.1;
+- accepts requests whose Host is `127.0.0.1` or `localhost`;
+- refuses cross-site POSTs;
+- opens source files inside the project.
+
+### The AI assistant loop
+
+`vibesequence install` does two things:
+
+- It adds a section to `CLAUDE.md` that tells the assistant to read `FLOWS.md` and `vibesequence show`
+  before reading source files.
+- It adds a Claude Code `PostToolUse` hook in `.claude/settings.local.json`.
+
+After every edit, the hook runs `vibesequence build . --hook`, which reports flows that changed, at
+function level and ignoring line numbers:
 
 ```
 vibesequence: flow changed
@@ -295,63 +266,38 @@ vibesequence: flow changed
        events.publish
 ```
 
-`vibesequence diff [flow]` menampilkan hal yang sama kapan saja (perubahan terakhir).
-Snippet dari `vibesequence install` juga meminta assistant menulis sequence diagram
-*rencana* di plan sebelum coding, supaya user menyetujui langkah-langkahnya dulu.
+`vibesequence diff` shows the same report at any time.
 
-## Scaling
+## Limits
 
-Yang sudah ada:
+- **It's static.** Both branches of every `if` are shown. It maps possible paths, not one execution.
+- **Resolution is heuristic, with no type checker:**
+  - dependency injection, interface → implementation dispatch, and functions passed as values often stay
+    unresolved and show up as grey external calls;
+  - NestJS decorators, React component trees, and Express handlers imported from another file are not
+    detected as entry points yet.
+- See the [roadmap](../README.md#roadmap) for what's planned.
 
-* **Inkremental**: extract per file, cache by content hash. Flask (24 file,
-  350 fungsi): 0.07 s dingin, 0.016 s hangat.
-* **Lazy**: `graph.json` berukuran O(fungsi + call), bukan O(entry × depth);
-  pohon flow dibangun saat diminta, di CLI maupun di browser.
-* **Pluggable**: `extractors/base.py` mendefinisikan protocol; `get_extractors()`
-  memetakan ekstensi → extractor. Tambah TypeScript/Go = satu kelas berbasis
-  tree-sitter yang mengeluarkan `ModuleFacts`, tanpa menyentuh resolver/renderer.
-* **Terbatas**: `--depth`, batas 150 pesan per diagram dengan catatan
-  "zoom in", filter eksternal.
-
-Langkah berikutnya kalau repo membesar:
-
-1. **tree-sitter** untuk bahasa berikutnya (Go, Java) memakai kontrak `ModuleFacts` yang sama (TS/JS sudah).
-2. **Resolusi lebih kuat**: inferensi return type sederhana (`ctx = self.request_context()` →
-   `RequestContext`), dependency injection (konstruktor FastAPI/Nest), protokol/interface
-   → implementasi (tampilkan sebagai `alt` antar implementasi).
-3. **Sharding output**: `graph.json` per package + indeks, viewer memuat shard saat
-   flow dibuka; atau MCP server kecil (`vibesequence serve`) yang mengekspos
-   `list_flows`, `show_flow(root, level, depth)` sehingga assistant memanggil
-   tool, bukan membaca file.
-4. **Diff flow vs git ref**: `vibesequence diff` sekarang membandingkan dengan build sebelumnya; versi `<git-ref>` —
-   review PR dengan melihat perubahan sequence, bukan perubahan baris.
-5. **Runtime trace sebagai lapisan opsional**: tangkap trace nyata (OpenTelemetry /
-   `sys.setprofile`) untuk menandai jalur yang benar-benar dieksekusi dan
-   memperbaiki call yang tak terpecahkan secara statis.
-6. **Nama pesan semantik**: untuk level package/module, minta LLM memberi label
-   ringkas satu kali per fungsi (di-cache), sehingga `OrderRepo.create` terbaca
-   "simpan order + line item".
-
-## Struktur kode
+## Code map
 
 ```
 vibesequence/
-  model.py              dataclass: CallSite, FunctionDef, ModuleFacts, EntryPoint, Graph
-  extractors/base.py    protocol Extractor + registry per ekstensi
-  extractors/python_ast.py   extractor Python (ast), urutan evaluasi, konteks, hint tipe
-  extractors/typescript_ts.py   extractor TS/JS (tree-sitter, opsional): import tsconfig, route Next.js/Express
-  resolver.py           rantai resolusi nama + inheritance + receiver + klasifikasi eksternal
-  entrypoints.py        deteksi route / cli / handler / main / root
-  builder.py            jalan di repo, cache hash, tulis graph.json
-  flow.py               expand (call tree) + project (zoom) + collapse
-  render/mermaid.py     Mermaid sequenceDiagram + fragment alt/loop/opt
-  render/viewer.html    viewer (port JS dari flow.py + mermaid.py)
-  render/html.py        menyuntik graph.json ke viewer
-  render/text.py        format text untuk AI: tree + file:line
-  serve.py              vibesequence serve: viewer via http + buka file di editor lewat CLI-nya
-  editor.py             deteksi editor default user + cara membukanya (URL scheme / CLI)
-  cli.py                build / list / show / callers / diff / serve / install
-tests/test_flow.py      smoke test (python tests/test_flow.py)
-examples/shop_api/      contoh FastAPI kecil untuk mencoba
-examples/next_shop/     contoh Next.js (App Router) + Express, domain yang sama
+  model.py                    dataclasses: CallSite, FunctionDef, ModuleFacts, EntryPoint, Graph
+  extractors/base.py          Extractor protocol + registry by file extension
+  extractors/python_ast.py    Python extractor (ast): evaluation order, context, type hints
+  extractors/typescript_ts.py TS/JS extractor (tree-sitter, optional): tsconfig imports, Next.js/Express routes
+  resolver.py                 name resolution, inheritance, receivers, external classification
+  entrypoints.py              route / cli / handler / main / root detection and ranking
+  builder.py                  walk the repo, hash cache, import roots, write graph.json
+  flow.py                     expand (call tree) + project (zoom) + collapse
+  render/mermaid.py           Mermaid sequenceDiagram + alt/loop/opt fragments
+  render/text.py              text format for the AI: tree + file:line
+  render/html.py              embed graph.json into the viewer
+  render/viewer.html          the viewer (JS port of flow.py + mermaid.py)
+  serve.py                    vibesequence serve: viewer over http + open files via the editor CLI
+  editor.py                   detect the user's editor and how to open it
+  cli.py                      build / list / show / callers / diff / serve / install
 ```
+
+Adding a language means writing one extractor that outputs `ModuleFacts`. The resolver, renderers and
+viewer don't change.

@@ -1,7 +1,8 @@
 # vibesequence
 
-Turn your codebase into **zoomable sequence diagrams**, and use them as a map while you vibe code with an AI assistant. A call graph tells you *what is connected to what*. vibesequence tells you
-*when a user does X, who calls whom, and in what order*.
+Turn your codebase into **zoomable sequence diagrams** that show *when a user does X, who calls whom,
+and in what order*. Use them as a map while you build, review or learn the code, on your own or with an
+AI assistant.
 
 Inspired by [graphify](https://github.com/Graphify-Labs/graphify), which turns a codebase into a knowledge
 graph so an AI assistant can navigate it without re-reading every file. vibesequence takes the same idea
@@ -84,5 +85,5 @@ Open for contributions! Pick a roadmap item, fix a bug, or improve the docs. Iss
 
 ## Learn more
 
-How the pipeline works (extract → resolve → expand → project → render), the live viewer, editor links
-and scaling notes: [docs/how-it-works.md](docs/how-it-works.md) (Indonesian).
+How the engine turns code into sequence diagrams (extract → resolve → expand → project → render), plus
+live mode, editor links and the AI hook: [docs/how-it-works.md](docs/how-it-works.md).
