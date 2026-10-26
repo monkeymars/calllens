@@ -3,6 +3,11 @@
 Turn your codebase into **zoomable sequence diagrams**, and use them as a map while you vibe code with an AI assistant. A call graph tells you *what is connected to what*. vibesequence tells you
 *when a user does X, who calls whom, and in what order*.
 
+Inspired by [graphify](https://github.com/Graphify-Labs/graphify), which turns a codebase into a knowledge
+graph so an AI assistant can navigate it without re-reading every file. vibesequence takes the same idea
+and adds what a graph leaves out: the **order** of calls and the branches around them (`if`, loops, error
+handling), drawn as user sequence diagrams that you and the assistant can both read.
+
 ![vibesequence demo](demo/vibesequence-demo.gif)
 
 ## Why
