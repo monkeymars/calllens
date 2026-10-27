@@ -37,14 +37,20 @@ Impact questions save the most: one `vibesequence callers` call replaced 6–7 g
 For edits, the agent still has to read the files it changes, so on the tiny example projects the map is
 extra overhead. Full method, per-task results and caveats: [docs/benchmark](https://github.com/monkeymars/vibesequence/blob/main/docs/benchmark/README.md).
 
+## Install
+
+From [PyPI](https://pypi.org/project/vibesequence/):
+
+```bash
+pip install vibesequence
+pip install "vibesequence[ts]"   # with TypeScript / JavaScript support
+```
+
 ## Quick start
 
 ```bash
-pip install vibesequence            # Python projects
-pip install "vibesequence[ts]"      # + TypeScript / JavaScript
-
-vibesequence build .                # parse the repo into vibesequence-out/
-vibesequence serve                  # open the viewer at http://127.0.0.1:8765
+vibesequence build .        # parse the repo into vibesequence-out/
+vibesequence serve          # open the viewer at http://127.0.0.1:8765
 ```
 
 Try it on the bundled examples: clone this repo and run `vibesequence build examples`.

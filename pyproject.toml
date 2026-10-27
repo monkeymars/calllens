@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vibesequence"
-version = "0.1.0"
+version = "0.1.1"
 description = "Turn a codebase into zoomable user sequence diagrams, for you and your AI assistant"
 readme = "README.md"
 license = "MIT"
