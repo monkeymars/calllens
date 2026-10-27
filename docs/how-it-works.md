@@ -45,7 +45,7 @@ or change the zoom, so they are cheap. All examples below are real output from `
 ### 1. Extract: calls in order, with their context
 
 `extractors/python_ast.py` (Python's `ast`, no dependencies) and `extractors/typescript_ts.py`
-(tree-sitter, `pip install -e ".[ts]"`) record, for every function, each call as a `CallSite`
+(tree-sitter, `pip install "vibesequence[ts]"`) record, for every function, each call as a `CallSite`
 (`model.py`):
 
 - **`expr`**: the call as written, e.g. `self.payments.charge`;

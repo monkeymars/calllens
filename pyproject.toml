@@ -1,16 +1,32 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]           # 77+: SPDX `license` string (PEP 639)
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "vibesequence"
 version = "0.1.0"
-description = "Turn a codebase into zoomable user sequence diagrams for vibe coding with an AI assistant"
+description = "Turn a codebase into zoomable user sequence diagrams, for you and your AI assistant"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Gery Wibowo" }]
 requires-python = ">=3.10"
+keywords = ["sequence-diagram", "code-visualization", "mermaid", "static-analysis", "ai-assistant"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Documentation",
+]
 dependencies = []                       # Python projects: stdlib only
 
 [project.optional-dependencies]
 ts = ["tree-sitter>=0.23", "tree-sitter-typescript>=0.23"]   # TypeScript / JavaScript projects
+
+[project.urls]
+Homepage = "https://github.com/monkeymars/vibesequence"
+Documentation = "https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md"
+Issues = "https://github.com/monkeymars/vibesequence/issues"
 
 [project.scripts]
 vibesequence = "vibesequence.cli:main"

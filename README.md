@@ -9,7 +9,7 @@ graph so an AI assistant can navigate it without re-reading every file. vibesequ
 and adds what a graph leaves out: the **order** of calls and the branches around them (`if`, loops, error
 handling), drawn as user sequence diagrams that you and the assistant can both read.
 
-![vibesequence demo](demo/vibesequence-demo.gif)
+![vibesequence demo](https://raw.githubusercontent.com/monkeymars/vibesequence/main/demo/vibesequence-demo.gif)
 
 ## Why
 
@@ -35,19 +35,19 @@ We benchmarked Claude Code on the same tasks with and without vibesequence. Ever
 
 Impact questions save the most: one `vibesequence callers` call replaced 6–7 greps and reads (−53% tokens).
 For edits, the agent still has to read the files it changes, so on the tiny example projects the map is
-extra overhead. Full method, per-task results and caveats: [docs/benchmark](docs/benchmark/README.md).
+extra overhead. Full method, per-task results and caveats: [docs/benchmark](https://github.com/monkeymars/vibesequence/blob/main/docs/benchmark/README.md).
 
 ## Quick start
 
 ```bash
-pip install -e .            # Python projects
-pip install -e ".[ts]"      # + TypeScript / JavaScript
+pip install vibesequence            # Python projects
+pip install "vibesequence[ts]"      # + TypeScript / JavaScript
 
-vibesequence build .        # parse the repo into vibesequence-out/
-vibesequence serve          # open the viewer at http://127.0.0.1:8765
+vibesequence build .                # parse the repo into vibesequence-out/
+vibesequence serve                  # open the viewer at http://127.0.0.1:8765
 ```
 
-Try it on the bundled examples: `vibesequence build examples`.
+Try it on the bundled examples: clone this repo and run `vibesequence build examples`.
 
 ## Commands
 
@@ -80,10 +80,11 @@ Open for contributions! Pick a roadmap item, fix a bug, or improve the docs. Iss
 
 - **New language**: add one extractor class in `vibesequence/extractors/` that outputs `ModuleFacts`
   (see `extractors/base.py`). The resolver, viewer and CLI work without changes.
+- **Set up**: clone the repo and run `pip install -e ".[ts]"`.
 - **Run the tests** before opening a PR: `python tests/test_flow.py`
 - Not sure where to start? Open an issue and say what you want to build.
 
 ## Learn more
 
 How the engine turns code into sequence diagrams (extract → resolve → expand → project → render), plus
-live mode, editor links and the AI hook: [docs/how-it-works.md](docs/how-it-works.md).
+live mode, editor links and the AI hook: [docs/how-it-works.md](https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md).

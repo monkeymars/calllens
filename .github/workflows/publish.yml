@@ -1,0 +1,21 @@
+# Publish to PyPI when a GitHub Release is published.
+# Uses PyPI Trusted Publishing (no API token stored): configure it once on pypi.org with
+# owner "monkeymars", repository "vibesequence", workflow "publish.yml", environment left empty.
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write                 # lets PyPI verify this workflow instead of a token
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: python -m pip install build && python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
