@@ -13,6 +13,7 @@ from playwright.sync_api import expect, sync_playwright
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8765/"
 SIZE = {"width": 1920, "height": 1080}
 OUT = Path(__file__).parent / "videos"
+NAV_W = 380                                # sidebar width in px (viewer default 248 truncates long flow names)
 
 # Playwright videos don't show the mouse: draw a dot that follows it and pulses on click.
 CURSOR = """
@@ -34,6 +35,8 @@ def main():
         browser = p.chromium.launch()
         ctx = browser.new_context(viewport=SIZE, record_video_dir=str(OUT), record_video_size=SIZE, color_scheme="light")
         ctx.add_init_script(CURSOR)
+        # the viewer reads its sidebar width from saved layout prefs before first paint
+        ctx.add_init_script(f"localStorage.setItem('vibesequence.layout', JSON.stringify({{navW: {NAV_W}}}))")
         page = ctx.new_page()
         pause = page.wait_for_timeout
 
