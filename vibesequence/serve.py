@@ -5,7 +5,8 @@ Why a server: editor URL schemes (vscode://file/...) are dropped by embedded bro
 VS Code's built-in browser (a webview), so a plain link cannot open the file there. A same-origin
 HTTP call to this process works in any browser.
 
-The editor is the user's default, detected once at start-up (see editor.py), not chosen by the page.
+The editor is detected once at start-up (see editor.py). The viewer's "Open in" dropdown may name another
+one, but only by key of that fixed table: the page picks an editor, never a command.
 
 Safety: binds to 127.0.0.1 only; every request must carry Host 127.0.0.1:<port> or localhost:<port>
 (blocks DNS rebinding: a website whose domain resolves to 127.0.0.1 sends its own Host); POSTs must be
@@ -29,7 +30,6 @@ from .extractors.base import get_extractors
 
 
 def _handler(out: Path, root: Path, refresh: Callable[[], object], editor: str):
-    name, argv_for = editors.EDITORS[editor]
     sources = set(get_extractors())               # the viewer only links to files vibesequence parsed
     lock = threading.Lock()                        # page loads and polls can arrive together: one build at a time
 
@@ -67,6 +67,8 @@ def _handler(out: Path, root: Path, refresh: Callable[[], object], editor: str):
             try:
                 req = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
                 path, line = (root / req["file"]).resolve(), int(req["line"])
+                # the viewer's "Open in" pick, else the detected editor; only keys of the fixed table
+                name, argv_for = editors.EDITORS[req.get("editor") or editor]
                 argv = argv_for(str(path), line)
             except (ValueError, KeyError, TypeError):
                 return self._reply(400, "bad request")
@@ -112,7 +114,7 @@ def run(out: Path, port: int, refresh: Callable[[], object]) -> None:
         raise SystemExit(f"vibesequence: ports {port}-{port + 19} are all in use; pass --port")
     url = f"http://127.0.0.1:{server.server_address[1]}/"
     print(f"vibesequence: serving {out}/ at {url}  (Ctrl+C to stop)")
-    print(f"  source links open in {editors.EDITORS[editor][0]} ({why}); override with VIBESEQUENCE_EDITOR=<{'|'.join(editors.EDITORS)}>")
+    print(f"  source links open in {editors.EDITORS[editor][0]} ({why}); change it in the viewer's \"Open in\" menu")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

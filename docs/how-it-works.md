@@ -257,6 +257,9 @@ know your editor, so `vibesequence build` / `serve` detects it from the terminal
 3. the first editor CLI on `PATH`;
 4. the OS default app.
 
+Detection is a guess (run `serve` from Zed's terminal and it picks Zed), so the **Open in** dropdown next to
+Source lets you choose another editor. The choice is remembered in the browser; "(auto)" goes back to detection.
+
 On `file://` pages the link uses the editor's URL scheme (`vscode://file/…`). Embedded browsers such as
 VS Code's Simple Browser block those, so under `serve` the page asks the server to run the editor's CLI
 instead (`code -g file:line`).

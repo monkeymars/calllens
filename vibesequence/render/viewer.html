@@ -140,6 +140,9 @@ body.nav-collapsed .nav, body.nav-collapsed .resizer { display: none; }
 .srclink:hover { color: var(--link); border-bottom-color: var(--link); }
 .props .v.src { display: flex; align-items: center; overflow: visible; }
 .props .v.src .srclink { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.editorpick { flex: none; field-sizing: content; max-width: 140px; margin-left: 8px; padding: 0 2px; border: 0; border-radius: 4px; background: none; color: var(--muted);
+              font: 12.5px var(--font); cursor: pointer; }
+.editorpick:hover { background: var(--hover); color: var(--ink); }
 .srcstatus { margin-left: 8px; color: var(--muted); font-size: 12.5px; white-space: nowrap; }
 .lede { margin: 0 0 14px; padding: 10px 0 0 6px; border-top: 1px solid var(--line-2); }   /* 6px lines up with the property column */
 .lede b { font-weight: 600; }
@@ -308,7 +311,7 @@ body.zen .page { padding: 0; }
         <h1><span class="icon" id="icon" aria-hidden="true"></span><span id="title">Flows</span></h1>
         <div class="props">
           <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4h5l7 7-5 5-7-7V4Zm3 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"/></svg>Type</div><div class="v" id="kind"></div>
-          <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M7.7 5.3 3 10l4.7 4.7 1.06-1.06L5.12 10l3.64-3.64L7.7 5.3Zm4.6 0-1.06 1.06L14.88 10l-3.64 3.64 1.06 1.06L17 10l-4.7-4.7Z"/></svg>Source</div><div class="v src"><a class="mono srclink" id="source"></a><span class="srcstatus" id="srcStatus" role="status"></span></div>
+          <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M7.7 5.3 3 10l4.7 4.7 1.06-1.06L5.12 10l3.64-3.64L7.7 5.3Zm4.6 0-1.06 1.06L14.88 10l-3.64 3.64 1.06 1.06L17 10l-4.7-4.7Z"/></svg>Source</div><div class="v src"><a class="mono srclink" id="source"></a><select class="editorpick" id="editorPick" aria-label="Open source in" title="Open source in… (remembered in this browser)"></select><span class="srcstatus" id="srcStatus" role="status"></span></div>
           <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12v1.5H4V5Zm0 4.25h12v1.5H4v-1.5ZM4 13.5h8V15H4v-1.5Z"/></svg>Steps</div><div class="v" id="count"></div>
           <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 9.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6.5 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM2 16c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5v.5H2V16Zm11.2.5c0-1.6-.6-3-1.6-4 .6-.3 1.2-.5 1.9-.5 2.3 0 4 1.7 4 3.9v.6h-4.3Z"/></svg>Participants</div><div class="v" id="parts"></div>
           <div class="k"><svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 0 3.5 13.07l-.75-1.3A5.5 5.5 0 1 1 15.5 10v.75a1.25 1.25 0 0 1-2.5 0V7h-1.4v.6A3.25 3.25 0 1 0 12 12.4a2.75 2.75 0 0 0 5-1.65V10A7 7 0 0 0 10 3Zm0 8.75a1.75 1.75 0 1 1 0-3.5 1.75 1.75 0 0 1 0 3.5Z"/></svg>Defined as</div><div class="v mono" id="defn"></div>
@@ -575,10 +578,14 @@ function badgeOf(e) {
 }
 function badgeEl(b) { const s = document.createElement('span'); s.className = 'badge' + (b.tone ? ' tone-' + b.tone : ''); s.textContent = b.text; return s; }
 
-// "Open in editor" links. The editor is the user's default, detected by `vibesequence build` / `vibesequence serve`
-// from the terminal they run in (vibesequence/editor.py): a browser cannot see it. On file:// pages the link
-// uses that editor's URL scheme; pages from `vibesequence serve` ask the server to open the file via its CLI.
-const EDITOR = '__EDITOR__';
+// "Open in editor" links. A browser cannot see the user's editor, so `vibesequence build` / `serve` detect it
+// from the terminal they run in (vibesequence/editor.py); the "Open in" dropdown next to Source overrides it
+// and is remembered. On file:// pages the link uses that editor's URL scheme; pages from `vibesequence serve`
+// ask the server to open the file via its CLI.
+const EDITOR = '__EDITOR__';                       // detected
+const pickedEditor = () => EDITOR_NAME[prefs.editor] ? prefs.editor : undefined;   // ignore stale saved values
+const editorKey = () => pickedEditor() || EDITOR;  // picked, else detected
+const editorName = () => EDITOR_NAME[editorKey()] || 'your editor';
 const EDITOR_NAME = { vscode: 'VS Code', cursor: 'Cursor', windsurf: 'Windsurf', antigravity: 'Antigravity', zed: 'Zed',
                       pycharm: 'PyCharm', idea: 'IntelliJ IDEA', system: 'your editor' };
 //  vscode://file<abs>:<line>:<col> is VS Code's handler; Cursor / Windsurf / Antigravity are VS Code forks with
@@ -591,7 +598,7 @@ const EDITOR_URL = { vscode: fileUrl('vscode'), cursor: fileUrl('cursor'), winds
 function editorUrl(fn) {                           // absolute path = build root + relative file
   let abs = (G.stats.root + '/' + fn.file).replace(/\\/g, '/');
   if (!abs.startsWith('/')) abs = '/' + abs;       // Windows: /C:/repo/app.py
-  return (EDITOR_URL[EDITOR] || EDITOR_URL.vscode)(abs, fn.line);
+  return (EDITOR_URL[editorKey()] || EDITOR_URL.vscode)(abs, fn.line);
 }
 
 const ROOT_LIMIT = 20;                             // same as the CLI: top roots first, rest behind "Show more"
@@ -699,7 +706,7 @@ async function renderDiagram() {
                             ...(entry ? [document.createTextNode(KIND_TITLE[entry.kind].replace(/s$/, ''))] : []));
   $('source').textContent = `${rfn.file}:${rfn.line}`;
   $('source').href = editorUrl(rfn);
-  $('source').title = `Open in ${EDITOR_NAME[EDITOR] || 'your editor'}`;
+  $('source').title = `Open in ${editorName()}`;
   $('count').textContent = `${countMessages(msg)} messages · ${state.level} level · depth ${state.depth}`;
   // a little more detail, all derived from the graph already in the page
   const lanes = new Set();
@@ -877,7 +884,7 @@ function renderPlayer() {
   const fn = !s.ret && G.functions[s.m.callee];
   if (fn) {
     const a = document.createElement('a'); a.className = 'mono srclink'; a.href = editorUrl(fn); a.textContent = `${fn.file}:${fn.line}`;
-    a.title = `Open in ${EDITOR_NAME[EDITOR] || 'your editor'}`;
+    a.title = `Open in ${editorName()}`;
     a.addEventListener('click', e => openInEditor(e, fn, msg => { a.textContent = msg; setTimeout(() => a.textContent = `${fn.file}:${fn.line}`, 2000); }));
     cap.append(' · ', a);
   }
@@ -1114,7 +1121,7 @@ async function openInEditor(e, fn, status) {
   const href = editorUrl(fn);
   try {
     const r = await fetch('/__open', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                       body: JSON.stringify({ file: fn.file, line: fn.line }) });
+                                       body: JSON.stringify({ file: fn.file, line: fn.line, editor: pickedEditor() }) });
     const res = await r.json().catch(() => null);
     if (res) return status(res.message);           // vibesequence serve answered: "opened in Zed" / "`code` is not on PATH"
   } catch {}
@@ -1122,6 +1129,16 @@ async function openInEditor(e, fn, status) {
 }
 const srcStatus = msg => { $('srcStatus').textContent = msg; clearTimeout(srcStatus.t); srcStatus.t = setTimeout(() => $('srcStatus').textContent = '', 2500); };
 $('source').addEventListener('click', e => openInEditor(e, G.functions[state.path[state.path.length - 1]], srcStatus));
+{ const pick = $('editorPick');                    // "Open in": Auto (detected) or a fixed editor, remembered
+  pick.add(new Option(`${EDITOR === 'system' ? 'OS default' : EDITOR_NAME[EDITOR] || 'Editor'} (auto)`, ''));
+  for (const [key, name] of Object.entries(EDITOR_NAME)) pick.add(new Option(key === 'system' ? 'OS default app' : name, key));
+  pick.value = pickedEditor() || '';
+  pick.onchange = () => {
+    prefs.editor = pick.value || undefined; savePrefs();
+    const fn = G.functions[state.path[state.path.length - 1]];
+    if (fn) { $('source').href = editorUrl(fn); $('source').title = `Open in ${editorName()}`; }
+    renderPlayer();                                // the Play caption has a source link too
+  }; }
 if (prefs.navW) setNavWidth(prefs.navW);
 if (prefs.navCollapsed) setNavCollapsed(true);
 $('navToggle').onclick = () => setNavCollapsed(!document.body.classList.contains('nav-collapsed'));
