@@ -1,5 +1,15 @@
 # vibesequence
 
+<p align="center">
+  <a href="https://pypi.org/project/vibesequence/"><img src="https://img.shields.io/pypi/v/vibesequence" alt="PyPI"/></a>
+  <a href="https://pypi.org/project/vibesequence/"><img src="https://img.shields.io/pypi/pyversions/vibesequence" alt="Python"/></a>
+  <a href="https://github.com/monkeymars/vibesequence/actions/workflows/python-app.yml"><img src="https://github.com/monkeymars/vibesequence/actions/workflows/python-app.yml/badge.svg?branch=main" alt="Tests"/></a>
+  <a href="https://github.com/monkeymars/vibesequence/actions/workflows/publish.yml"><img src="https://github.com/monkeymars/vibesequence/actions/workflows/publish.yml/badge.svg" alt="Publish"/></a>
+  <a href="https://github.com/monkeymars/vibesequence/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="License: MIT"/></a>
+  <a href="https://pepy.tech/project/vibesequence"><img src="https://img.shields.io/pepy/dt/vibesequence?color=blue&label=downloads" alt="Downloads"/></a>
+  <a href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md"><img src="https://img.shields.io/badge/Docs-how%20it%20works-0b7285?style=flat&logo=readthedocs&logoColor=white" alt="Docs"/></a>
+</p>
+
 Turn your codebase into **zoomable sequence diagrams** that show *when a user does X, who calls whom,
 and in what order*. Use them as a map while you build, review or learn the code, on your own or with an
 AI assistant.
