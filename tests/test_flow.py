@@ -92,6 +92,8 @@ def test_serve_open_guards():
         assert post({"file": "../../etc/passwd", "line": 1}) == 403
         assert post({"file": "app.py", "line": "x"}) == 400
         assert post({"file": "app.py", "line": 1}) == 404                          # CLI not on PATH
+        assert post({"file": "app.py", "line": 1, "editor": "rm -rf /"}) == 400    # viewer pick: table keys only
+        assert post({"file": "app.py", "line": 1, "editor": "missing"}) == 404     # a valid pick is used
         srv.shutdown()
 
 
