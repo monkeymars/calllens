@@ -11,7 +11,8 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Gery Wibowo" }]
 requires-python = ">=3.10"
-keywords = ["sequence-diagram", "code-visualization", "mermaid", "static-analysis", "ai-assistant"]
+keywords = ["sequence-diagram", "code-visualization", "mermaid", "static-analysis", "ai-assistant",
+            "python", "typescript", "golang"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Environment :: Console",
@@ -22,6 +23,7 @@ dependencies = []                       # Python projects: stdlib only
 
 [project.optional-dependencies]
 ts = ["tree-sitter>=0.23", "tree-sitter-typescript>=0.23"]   # TypeScript / JavaScript projects
+go = ["tree-sitter>=0.23", "tree-sitter-go>=0.23"]           # Go projects
 
 [project.urls]
 Homepage = "https://github.com/monkeymars/vibesequence"

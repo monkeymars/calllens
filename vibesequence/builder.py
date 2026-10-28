@@ -25,8 +25,11 @@ from .resolver import Resolver
 CACHE_VERSION = 2          # bump when extractor output changes, so stale facts are reparsed
 IGNORE_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "dist", "build",
                "vibesequence-out", "graphify-out", ".mypy_cache", ".pytest_cache", "site-packages",
-               ".next", ".nuxt", ".svelte-kit", ".turbo", ".vercel", "coverage", ".cache", ".strapi"}
-TS_EXTS = {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"}
+               ".next", ".nuxt", ".svelte-kit", ".turbo", ".vercel", "coverage", ".cache", ".strapi",
+               "vendor", "testdata"}
+# files we could parse with an optional extra: counted when it is missing, so the build can say so
+OPTIONAL = {**dict.fromkeys((".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"), ("TypeScript/JavaScript", "ts")),
+            ".go": ("Go", "go")}
 
 
 def _hash(p: Path) -> str:
@@ -56,12 +59,14 @@ def build(root: Path, out_dir: Path, use_cache: bool = True) -> Graph:
 
     modules: list[ModuleFacts] = []
     new_cache: dict = {"__version__": CACHE_VERSION}
-    files_seen = files_parsed = ts_skipped = 0
+    files_seen = files_parsed = 0
+    skipped: Counter[str] = Counter()                     # optional language -> files we could not parse
     for p in sorted(root.rglob("*")):
         if not p.is_file() or p.name.endswith(".d.ts"):
             continue
         if p.suffix not in extractors:
-            ts_skipped += p.suffix in TS_EXTS and not any(part in IGNORE_DIRS for part in p.relative_to(root).parts)
+            if p.suffix in OPTIONAL and not any(part in IGNORE_DIRS for part in p.relative_to(root).parts):
+                skipped[OPTIONAL[p.suffix]] += 1
             continue
         if any(part in IGNORE_DIRS for part in p.relative_to(root).parts):
             continue
@@ -92,8 +97,8 @@ def build(root: Path, out_dir: Path, use_cache: bool = True) -> Graph:
         "root": str(root), "files": files_seen, "files_reparsed": files_parsed,
         "functions": len(resolver.functions), "entries": len(entries),
         **res_stats, "seconds": round(time.time() - t0, 3),
-        "import_roots": import_roots, "import_warning": import_warning or (
-            f"{ts_skipped} TypeScript/JavaScript files skipped: pip install 'vibesequence[ts]'" if ts_skipped else ""),
+        "import_roots": import_roots, "import_warning": import_warning or "; ".join(
+            f"{n} {lang} files skipped: pip install 'vibesequence[{extra}]'" for (lang, extra), n in skipped.items()),
     }
     graph = Graph(functions=resolver.functions, entries=entries, stats=stats)
     cache_path.write_text(json.dumps(new_cache))

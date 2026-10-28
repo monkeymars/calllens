@@ -27,6 +27,11 @@ def get_extractors() -> dict[str, Extractor]:
         available.append(TypeScriptExtractor())
     except ImportError:
         pass
+    try:                                                  # optional: pip install vibesequence[go]
+        from .go_ts import GoExtractor
+        available.append(GoExtractor())
+    except ImportError:
+        pass
     table: dict[str, Extractor] = {}
     for ex in available:
         for ext in ex.extensions:

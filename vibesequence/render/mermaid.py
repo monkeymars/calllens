@@ -17,7 +17,7 @@ from ..flow import Message, display_name
 FRAGMENT = {"loop": "loop", "if": "alt", "else": "else", "try": "opt", "except": "opt",
             "with": "opt", "finally": "opt"}
 FRAGMENT_LABEL = {"if": "if", "else": "else", "loop": "for each", "try": "try",
-                  "except": "on error", "with": "with", "finally": "finally"}
+                  "except": "on error", "with": "with", "finally": "finally", "go": "goroutine"}
 
 
 def fragment_label(tag: str) -> str:

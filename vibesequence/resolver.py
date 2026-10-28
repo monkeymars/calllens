@@ -18,13 +18,22 @@ interesting boundaries (DB, HTTP, queue).
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import replace
 
 from .model import FunctionDef, ModuleFacts
 
 
+def _merge(a: ModuleFacts, b: ModuleFacts) -> ModuleFacts:
+    """Two files, one module: a Go package spans several files that see each other's names."""
+    return replace(a, imports={**b.imports, **a.imports}, instance_hints={**b.instance_hints, **a.instance_hints},
+                   bases={**b.bases, **a.bases}, globals=a.globals + b.globals, aliases={**b.aliases, **a.aliases})
+
+
 class Resolver:
     def __init__(self, modules: list[ModuleFacts]):
-        self.modules = {m.module: m for m in modules}
+        self.modules: dict[str, ModuleFacts] = {}
+        for m in modules:
+            self.modules[m.module] = _merge(self.modules[m.module], m) if m.module in self.modules else m
         self.functions: dict[str, FunctionDef] = {}
         # (module, qualname) -> id      qualname = "Class.method" | "func"
         self.by_qual: dict[tuple[str, str], str] = {}
@@ -72,6 +81,33 @@ class Resolver:
                     return fid
         return None
 
+    def _attr_type(self, cls: str, attr: str, module: str, _seen: frozenset[str] = frozenset()) -> str | None:
+        """Declared type of `self.<attr>` in `cls`: its own field, else a base class's field
+        (Go embedded struct, Python attribute set in a parent __init__)."""
+        if cls in _seen:
+            return None
+        for home in dict.fromkeys([module, *self.class_modules.get(cls, [])]):
+            facts = self.modules.get(home)
+            if not facts:
+                continue
+            if t := facts.instance_hints.get(f"{cls}.{attr}"):
+                return self._hint_type(t, home)
+            for base in facts.bases.get(cls, []):
+                pkg, _, name = base.rpartition(".")
+                base_home = facts.imports.get(pkg, home) if pkg else home
+                if t := self._attr_type(name, attr, base_home, _seen | {cls}):
+                    return t
+        return None
+
+    def _hint_type(self, hint: str | None, module: str) -> str | None:
+        """A type name, or "pkg.Func()": the declared result type of that function (Go `conn := db.Open()`)."""
+        if not hint or not hint.endswith("()"):
+            return hint
+        pkg, _, func = hint[:-2].rpartition(".")
+        home = self._import_target(module, pkg) if pkg else module
+        facts = self.modules.get(home or "")
+        return facts.instance_hints.get(f"{func}()") if facts else None
+
     def _module_func(self, module: str, func: str) -> str | None:
         return self.by_qual.get((module, func))
 
@@ -113,8 +149,7 @@ class Resolver:
 
         # 3. self.attr.method
         if head == "self" and len(rest) == 2 and caller.cls and facts:
-            attr = rest[0]
-            hinted = facts.instance_hints.get(f"{caller.cls}.{attr}")
+            hinted = self._attr_type(caller.cls, rest[0], mod)
             if hinted:
                 return self._class_method(hinted.split(".")[-1], method, mod)
             return None
@@ -122,8 +157,8 @@ class Resolver:
         if len(rest) == 1:
             # 4. local variable / parameter with type hint
             if head in caller.local_hints:
-                cls = caller.local_hints[head].split(".")[-1]
-                return self._class_method(cls, method, mod)
+                hinted = self._hint_type(caller.local_hints[head], mod)
+                return self._class_method(hinted.split(".")[-1], method, mod) if hinted else None
             # 6. Class.method / Class().method
             if head[:1].isupper():
                 return self._class_method(head, method, mod)
@@ -136,13 +171,12 @@ class Resolver:
                 tfacts = self.modules.get(tmod)
                 if tfacts:
                     tname = tfacts.aliases.get(tname, tname)
-                    if tname in tfacts.instance_hints:
-                        return self._class_method(tfacts.instance_hints[tname].split(".")[-1], method, tmod)
+                    if hinted := self._hint_type(tfacts.instance_hints.get(tname), tmod):
+                        return self._class_method(hinted.split(".")[-1], method, tmod)
                 # `import a.b` then `a.b.c.f()` handled by len(rest)>1 branch
             # 7. module-level instance
-            if facts and head in facts.instance_hints:
-                cls = facts.instance_hints[head].split(".")[-1]
-                return self._class_method(cls, method, mod)
+            if facts and (hinted := self._hint_type(facts.instance_hints.get(head), mod)):
+                return self._class_method(hinted.split(".")[-1], method, mod)
             return None
 
         # deeper dotted paths: try as module path  a.b.c.func  or  a.b.Class.method
@@ -166,13 +200,13 @@ class Resolver:
         if parts[0] == "self" and len(parts) == 2 and caller.cls:
             cls, mod = caller.cls, caller.module
         elif parts[0] == "self" and len(parts) == 3 and caller.cls:
-            facts = self.modules.get(caller.module)
-            cls = facts.instance_hints.get(f"{caller.cls}.{parts[1]}") if facts else None
+            cls = self._attr_type(caller.cls, parts[1], caller.module)
         elif len(parts) == 2 and parts[0] in caller.local_hints:
-            cls = caller.local_hints[parts[0]]
+            cls = self._hint_type(caller.local_hints[parts[0]], caller.module)
         elif len(parts) == 2:
             facts = self.modules.get(caller.module)
-            cls = facts.instance_hints.get(parts[0]) if facts else (parts[0] if parts[0][:1].isupper() else None)
+            cls = self._hint_type(facts.instance_hints.get(parts[0]), caller.module) if facts else \
+                (parts[0] if parts[0][:1].isupper() else None)
             if cls is None and parts[0][:1].isupper():
                 cls = parts[0]
         if not cls:
@@ -184,9 +218,14 @@ class Resolver:
         return f"{mods[0]}:{cls}" if mods else None
 
     def ext_kind_of(self, caller: FunctionDef, expr: str) -> str:
-        head = expr.replace("()", "").split(".")[0]
+        parts = expr.replace("()", "").split(".")
+        head = parts[0]
         facts = self.modules.get(caller.module)
         if facts and head in facts.imports:
+            return "lib"
+        # self.client.Post() / self.store.Save(): a typed field whose method we could not resolve is a
+        # library client or an interface (Go DI); either way a boundary worth showing
+        if head == "self" and len(parts) == 3 and caller.cls and self._attr_type(caller.cls, parts[1], caller.module):
             return "lib"
         if head[:1].isupper():                 # Class(...) or Module.X: looks like a type
             return "lib"
