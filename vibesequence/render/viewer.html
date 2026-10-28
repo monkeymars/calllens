@@ -502,7 +502,7 @@ function project(root, level, externals, actor = 'User') {
 
 // ---- mermaid text ----------------------------------------------------
 const FRAG = { loop: 'loop', if: 'alt', else: 'else', try: 'opt', except: 'opt', with: 'opt', finally: 'opt' };
-const FRAG_LABEL = { if: 'if', else: 'else', loop: 'for each', try: 'try', except: 'on error', with: 'with', finally: 'finally' };
+const FRAG_LABEL = { if: 'if', else: 'else', loop: 'for each', try: 'try', except: 'on error', with: 'with', finally: 'finally', go: 'goroutine' };
 const esc = s => s.replace(/;/g, '#semi;').replace(/\n/g, ' ');
 const tagKind = t => t.split(':')[0];
 function fragLabel(tag) {
@@ -714,7 +714,11 @@ async function renderDiagram() {
   const own = new Set(); let ext = 0;
   (function walk(n) { for (const c of n.children) { if (c.callee.startsWith('ext:')) ext += allowed.has(c.extKind || 'local'); else own.add(c.callee); walk(c); } })(tree);
   $('calls').textContent = `${own.size} of your functions · ${ext} external calls`;
-  if (/\.[mc]?[jt]sx?$/.test(rfn.file)) {          // TS/JS: show it the way the code reads
+  if (rfn.file.endsWith('.go')) {                  // Go: route / command registration, else the func signature
+    const deco = rfn.decorators[0];
+    $('defn').textContent = deco === 'cobra.command' ? `cobra.Command{Use: "${rfn.name}"}`
+      : deco ? `${deco.replace(/\)$/, '')}, …)` : `func ${rfn.cls ? `(${rfn.cls}) ` : ''}${rfn.name}()`;
+  } else if (/\.[mc]?[jt]sx?$/.test(rfn.file)) {   // TS/JS: show it the way the code reads
     const route = rfn.decorators.find(d => !d.startsWith('route.'));   // route.* = Next.js file route (synthetic)
     $('defn').textContent = route ? `${route.replace(/\)$/, '')}, …)`
       : `${rfn.decorators.length ? 'export ' : ''}${rfn.is_async ? 'async ' : ''}function ${rfn.name}()`;

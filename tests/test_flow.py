@@ -169,7 +169,36 @@ def test_typescript_next_and_express():
             assert step in text, (step, text)
 
 
+def test_go_shop():
+    """examples/go_shop: net/http + cobra entry points; calls resolve across packages (go.mod imports),
+    sibling files of one package, embedded structs, NewX constructors and declared result types.
+    Skipped without the optional tree-sitter-go dependency."""
+    try:
+        import tree_sitter_go  # noqa: F401
+    except ImportError:
+        print("skip test_go_shop: pip install 'vibesequence[go]'")
+        return
+    example = Path(__file__).resolve().parents[1] / "examples" / "go_shop"
+    with tempfile.TemporaryDirectory() as d:
+        graph = builder.build(example, Path(d))
+        labels = {e.label for e in graph.entries}
+        assert {"POST /orders", "GET /orders/{id}", "POST /orders/{id}/cancel", "GET /healthz",
+                "cli restock", "cli migrate", "main()"} <= labels, labels
+        text = _run("show", "POST /orders", "--out", d, "--format", "text", "--level", "function", "--depth", "6")
+        for step in ("OrderHandler.Create", "auth.RequireUser", "OrderService.Place", "service.validate",
+                     "for _, it := range items", "ProductRepo.Get", "BaseRepo.Find", "Conn.QueryRow",
+                     "sql.QueryRowContext", "Pricing.Line", "Gateway.Charge", "client.Post", "on error",
+                     "OrderRepo.MarkFailed", "goroutine", "events.Publish"):
+            assert step in text, (step, text)
+        assert "fmt." not in text and "json." not in text, text        # plumbing packages are filtered
+        cancel = _run("show", "POST /orders/{id}/cancel", "--out", d, "--format", "text", "--level", "function")
+        assert "Gateway.Refund" in cancel, cancel                       # field hint from a sibling file
+        health = _run("show", "GET /healthz", "--out", d, "--format", "text", "--level", "function")
+        assert "Conn.Ping" in health, health                            # conn := db.Open(): result type
+
+
 if __name__ == "__main__":
+    test_go_shop()
     test_typescript_next_and_express()
     test_import_root_and_ranking()
     test_flow()

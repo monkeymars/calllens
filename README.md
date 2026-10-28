@@ -32,7 +32,7 @@ and draws each one as a sequence diagram:
 - **Live**: while the AI edits, changed steps turn green and you can play only the changes.
 - **AI friendly**: the same flow is available as compact text, so your assistant reads one diagram instead of eight files.
 
-Supports Python (stdlib only) and TypeScript / JavaScript (Next.js, Express).
+Supports Python (stdlib only), TypeScript / JavaScript (Next.js, Express) and Go (net/http, Gin, Echo, Chi, Fiber, Cobra).
 
 ## Does it save tokens?
 
@@ -54,6 +54,7 @@ From [PyPI](https://pypi.org/project/vibesequence/):
 ```bash
 pip install vibesequence
 pip install "vibesequence[ts]"   # with TypeScript / JavaScript support
+pip install "vibesequence[go]"   # with Go support
 ```
 
 ## Quick start
@@ -83,7 +84,7 @@ Try it on the bundled examples: clone this repo and run `vibesequence build exam
 
 ## Roadmap
 
-- [ ] **Go**: tree-sitter extractor, entry points for `net/http`, Gin, Echo, Chi and Cobra commands
+- [x] **Go**: tree-sitter extractor, entry points for `net/http`, Gin, Echo, Chi, Fiber and Cobra commands
 - [ ] **Java**: Spring controllers
 - [ ] **Smarter resolution**: return-type inference, dependency injection, interface → implementations
 - [ ] **Diff against a git ref**: review a PR as sequence changes, not line changes
@@ -96,7 +97,7 @@ Open for contributions! Pick a roadmap item, fix a bug, or improve the docs. Iss
 
 - **New language**: add one extractor class in `vibesequence/extractors/` that outputs `ModuleFacts`
   (see `extractors/base.py`). The resolver, viewer and CLI work without changes.
-- **Set up**: clone the repo and run `pip install -e ".[ts]"`.
+- **Set up**: clone the repo and run `pip install -e ".[ts,go]"`.
 - **Run the tests** before opening a PR: `python tests/test_flow.py`
 - Not sure where to start? Open an issue and say what you want to build.
 

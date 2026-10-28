@@ -44,9 +44,9 @@ or change the zoom, so they are cheap. All examples below are real output from `
 
 ### 1. Extract: calls in order, with their context
 
-`extractors/python_ast.py` (Python's `ast`, no dependencies) and `extractors/typescript_ts.py`
-(tree-sitter, `pip install "vibesequence[ts]"`) record, for every function, each call as a `CallSite`
-(`model.py`):
+`extractors/python_ast.py` (Python's `ast`, no dependencies), `extractors/typescript_ts.py`
+(tree-sitter, `pip install "vibesequence[ts]"`) and `extractors/go_ts.py` (tree-sitter,
+`pip install "vibesequence[go]"`) record, for every function, each call as a `CallSite` (`model.py`):
 
 - **`expr`**: the call as written, e.g. `self.payments.charge`;
 - **`order`**: its position in the body. Evaluation order is respected: `a.b().c(d())` is recorded as
@@ -77,6 +77,27 @@ changed files (Flask, 24 files and 350 functions: 0.07 s cold, 0.016 s warm).
   `this.x = new X()`, and exported instances (`export const orderService = new OrderService(...)`).
 - Callbacks passed to `map`/`forEach`/`filter` are drawn as a `loop`, and `.catch(cb)` as an error branch.
 - Generic framework file names keep their folder: `orders/route`, `[id]/route`.
+
+**Go** maps onto the same model too:
+
+- A module is a **package** (its directory), not a file: Go calls functions in sibling files without
+  importing them, so all files of a package share one module and the resolver merges their facts.
+- Imports resolve through the nearest `go.mod`: `<module path>/internal/repos` becomes that local package.
+  `net/http`, `database/sql` and third-party packages become library participants.
+- The method receiver is written as `self` (`s.orders.Create` → `self.orders.Create`), so the same rules
+  apply. Struct field types become class hints, and embedded structs become base classes.
+- Locals get types from parameters, `var x T`, `&T{}`, `new(T)`, the `NewT(...)` convention, and the
+  declared result type of the function they come from (`conn := db.Open()` → `*Conn`).
+- `if err != nil { … }` is drawn as `on error`, `go f()` as `goroutine`, `defer f()` as `finally`.
+  Builtins (`len`, `append`) and plumbing packages (`fmt`, `errors`, `strings`, `context`, `encoding/json`…)
+  are left out.
+- Route registrations become small entry functions that call the handler:
+  - `net/http` `HandleFunc` / `Handle`, including Go 1.22 `"POST /orders"` patterns;
+  - Gin, Echo, Fiber and Chi verb methods, with `r.Group("/v1")` prefixes;
+  - `cobra.Command{Use: "serve", RunE: …}` as CLI flows.
+- `_test.go` files, `vendor/` and `testdata/` are skipped.
+
+Example: `examples/go_shop` (the same shop domain as the Python and TypeScript examples).
 
 ### 2. Resolve: from `self.orders.create` to a definition
 
@@ -273,9 +294,11 @@ vibesequence: flow changed
 - **It's static.** Both branches of every `if` are shown. It maps possible paths, not one execution.
 - **Resolution is heuristic, with no type checker:**
   - dependency injection, interface → implementation dispatch, and functions passed as values often stay
-    unresolved and show up as grey external calls;
+    unresolved and show up as grey external calls. In Go this matters most: a call through an interface
+    field (`s.store.Save()`) is shown as an external `store` participant, not the implementation;
   - NestJS decorators, React component trees, and Express handlers imported from another file are not
-    detected as entry points yet.
+    detected as entry points yet. In Go, Chi's nested `r.Route("/x", func(r chi.Router) {…})` prefixes
+    are not applied.
 - See the [roadmap](../README.md#roadmap) for what's planned.
 
 ## Code map
@@ -286,6 +309,7 @@ vibesequence/
   extractors/base.py          Extractor protocol + registry by file extension
   extractors/python_ast.py    Python extractor (ast): evaluation order, context, type hints
   extractors/typescript_ts.py TS/JS extractor (tree-sitter, optional): tsconfig imports, Next.js/Express routes
+  extractors/go_ts.py         Go extractor (tree-sitter, optional): go.mod imports, net/http/Gin/Echo/Chi/Cobra entries
   resolver.py                 name resolution, inheritance, receivers, external classification
   entrypoints.py              route / cli / handler / main / root detection and ranking
   builder.py                  walk the repo, hash cache, import roots, write graph.json
