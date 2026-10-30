@@ -117,6 +117,13 @@ h1 em { font-style: normal; color: var(--blue); }
 .col h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: .4rem; }
 .col p { margin: 0; color: var(--ink-2); }
 .col code { font-size: .88em; color: var(--ink); }
+.illus { margin: .4rem -20px 0; overflow-x: auto; }
+.illus-svg { display: block; width: 100%; height: auto; min-width: 860px; }   /* phones: scroll sideways, never shrink to unreadable */
+.swipe { display: none; margin: .4rem 0 0; font-size: .85rem; color: var(--ink-3); }
+@media (max-width: 860px) { .swipe { display: block; } }
+@media (prefers-color-scheme: dark) {                  /* the illustration is drawn in light ink: give it its own light panel */
+  .illus { margin: .6rem 0 0; padding: 14px 10px 6px; border-radius: 12px; background: #FCFCFA; }
+}
 .media { margin: 2.2rem 0 0; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: var(--press); }
 .media video, .media img { display: block; width: 100%; height: auto; }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
@@ -206,11 +213,159 @@ pre.code .c { color: var(--ink-3); }
     <span class="tag">note over vibesequence</span>
     <h2>One static read, every flow</h2>
     <p class="sub">A call graph tells you what is connected. vibesequence keeps what it throws away: the order of calls, and the branch around each one.</p>
-    <div class="cols">
-      <div class="col"><span class="n">01 · read</span><h3>Parse</h3><p>Every function, every call in order, with the <code>if</code>, loop or <code>try</code> it sits in.</p></div>
-      <div class="col"><span class="n">02 · connect</span><h3>Resolve</h3><p>Trace <code>self.orders.create</code> to <code>OrderRepo.create</code>, then find each route, command and handler.</p></div>
-      <div class="col"><span class="n">03 · draw</span><h3>Zoom</h3><p>Walk each flow into a sequence diagram you can read from packages down to functions.</p></div>
-    </div>
+    <figure class="illus">
+<svg viewBox="0 140 1600 710" class="illus-svg" role="img" aria-label="Illustration: three Python files with numbered calls flow through vibesequence (extract, resolve, find entry points, zoom and render) into a user sequence diagram for POST /orders, where each numbered call becomes an arrow and the for loop becomes a loop box.">
+<text x="60" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#2383E2" text-anchor="start" letter-spacing="1">01</text>
+<text x="90" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#5F5E5A" text-anchor="start" letter-spacing="1.2">YOUR CODE</text>
+<text x="600" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#2383E2" text-anchor="start" letter-spacing="1">02</text>
+<text x="630" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#5F5E5A" text-anchor="start" letter-spacing="1.2">VIBESEQUENCE</text>
+<text x="1040" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#2383E2" text-anchor="start" letter-spacing="1">03</text>
+<text x="1070" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#5F5E5A" text-anchor="start" letter-spacing="1.2">USER SEQUENCE DIAGRAM</text>
+<rect x="60" y="186" width="480" height="132" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<path d="M60 224H540" stroke="#E2E2DE"/>
+<circle cx="80" cy="205" r="4" fill="#E8E8E4"/>
+<circle cx="94" cy="205" r="4" fill="#E8E8E4"/>
+<circle cx="108" cy="205" r="4" fill="#E8E8E4"/>
+<text x="128" y="210" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="start">app/api/orders.py</text>
+<rect x="79.0" y="235" width="199.89" height="21" rx="4" fill="#E7F3F8"/>
+<text x="82" y="250" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve"><tspan fill="#2383E2">@router.post(<tspan fill="#3E8A5C">&quot;/orders&quot;</tspan>)</tspan></text>
+<circle cx="514" cy="245" r="11" fill="#2383E2"/>
+<text x="514" y="249.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+<text x="82" y="274" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve"><tspan fill="#8A4FC4">def </tspan>create_order(payload):</text>
+<rect x="171.73" y="283" width="208.32" height="21" rx="4" fill="#E7F3F8"/>
+<text x="82" y="298" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">    <tspan fill="#8A4FC4">return </tspan>svc.place(payload.items)</text>
+<circle cx="514" cy="293" r="11" fill="#2383E2"/>
+<text x="514" y="297.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+<rect x="60" y="336" width="480" height="232" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<path d="M60 374H540" stroke="#E2E2DE"/>
+<circle cx="80" cy="355" r="4" fill="#E8E8E4"/>
+<circle cx="94" cy="355" r="4" fill="#E8E8E4"/>
+<circle cx="108" cy="355" r="4" fill="#E8E8E4"/>
+<text x="128" y="360" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="start">app/services/order_service.py</text>
+<text x="82" y="400" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve"><tspan fill="#8A4FC4">class </tspan>OrderService:</text>
+<text x="82" y="424" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">    <tspan fill="#8A4FC4">def </tspan>place(self, items):</text>
+<text x="82" y="448" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">        <tspan fill="#8A4FC4">for </tspan>item<tspan fill="#8A4FC4"> in </tspan>items:</text>
+<rect x="180.16" y="457" width="199.89" height="21" rx="4" fill="#E7F3F8"/>
+<text x="82" y="472" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">            self.repo.get(item.sku)</text>
+<circle cx="514" cy="467" r="11" fill="#2383E2"/>
+<text x="514" y="471.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+<rect x="213.88" y="481" width="199.89" height="21" rx="4" fill="#E7F3F8"/>
+<text x="82" y="496" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">        order = self.repo.create(items)</text>
+<circle cx="514" cy="491" r="11" fill="#2383E2"/>
+<text x="514" y="495.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+<rect x="146.44" y="505" width="233.60999999999999" height="21" rx="4" fill="#E7F3F8"/>
+<text x="82" y="520" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">        self.payments.charge(order)</text>
+<circle cx="514" cy="515" r="11" fill="#2383E2"/>
+<text x="514" y="519.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+<text x="82" y="544" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">        <tspan fill="#8A4FC4">return </tspan>order</text>
+<path d="M74 437v90" stroke="#8A4FC4" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+<rect x="60" y="586" width="480" height="132" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<path d="M60 624H540" stroke="#E2E2DE"/>
+<circle cx="80" cy="605" r="4" fill="#E8E8E4"/>
+<circle cx="94" cy="605" r="4" fill="#E8E8E4"/>
+<circle cx="108" cy="605" r="4" fill="#E8E8E4"/>
+<text x="128" y="610" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="start">app/repos/order_repo.py</text>
+<text x="82" y="650" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve"><tspan fill="#8A4FC4">class </tspan>OrderRepo(BaseRepo):</text>
+<text x="82" y="674" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">    <tspan fill="#8A4FC4">def </tspan>get(self, sku): ...</text>
+<text x="82" y="698" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">    <tspan fill="#8A4FC4">def </tspan>create(self, items): ...</text>
+<text x="60" y="752" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#9A9994" text-anchor="start">Calls are kept in source order, with the if / loop / try around them.</text>
+<path d="M552 452h28m-9-9 9 9-9 9" stroke="#9A9994" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M992 452h28m-9-9 9 9-9 9" stroke="#9A9994" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="600" y="186" width="380" height="110" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<rect x="620" y="208" width="30" height="30" rx="8" fill="#E7F3F8"/>
+<text x="635" y="228" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="800" fill="#2383E2" text-anchor="middle">1</text>
+<text x="666" y="229" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#161615" text-anchor="start" letter-spacing="-0.3">Extract</text>
+<text x="666" y="256" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">every call, in source order,</text>
+<text x="666" y="277" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">with its if / loop / try</text>
+<path d="M790.0 298v20m-6-6 6 6 6-6" stroke="#9A9994" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="600" y="322" width="380" height="110" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<rect x="620" y="344" width="30" height="30" rx="8" fill="#E7F3F8"/>
+<text x="635" y="364" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="800" fill="#2383E2" text-anchor="middle">2</text>
+<text x="666" y="365" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#161615" text-anchor="start" letter-spacing="-0.3">Resolve</text>
+<text x="666" y="392" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">self.repo.get  →  OrderRepo.get</text>
+<text x="666" y="413" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">through imports and inheritance</text>
+<path d="M790.0 434v20m-6-6 6 6 6-6" stroke="#9A9994" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="600" y="458" width="380" height="110" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<rect x="620" y="480" width="30" height="30" rx="8" fill="#E7F3F8"/>
+<text x="635" y="500" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="800" fill="#2383E2" text-anchor="middle">3</text>
+<text x="666" y="501" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#161615" text-anchor="start" letter-spacing="-0.3">Find entry points</text>
+<text x="666" y="528" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">@router.post(&quot;/orders&quot;)</text>
+<text x="666" y="549" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">→  the flow  POST /orders</text>
+<path d="M790.0 570v20m-6-6 6 6 6-6" stroke="#9A9994" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="600" y="594" width="380" height="110" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<rect x="620" y="616" width="30" height="30" rx="8" fill="#E7F3F8"/>
+<text x="635" y="636" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="800" fill="#2383E2" text-anchor="middle">4</text>
+<text x="666" y="637" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#161615" text-anchor="start" letter-spacing="-0.3">Zoom &amp; render</text>
+<text x="666" y="664" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">pick lanes: package … function</text>
+<text x="666" y="685" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">→  a Mermaid sequence diagram</text>
+<rect x="1040" y="186" width="500" height="532" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<path d="M1098 242V690" stroke="#E2E2DE" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="1054" y="210" width="88" height="32" rx="7" fill="#E7F3F8" stroke="#2383E2" stroke-width="1.4"/>
+<text x="1098" y="230.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#161615" text-anchor="middle">User</text>
+<path d="M1194 242V690" stroke="#E2E2DE" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="1150" y="210" width="88" height="32" rx="7" fill="#FFFFFF" stroke="#161615" stroke-width="1.4"/>
+<text x="1194" y="230.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#161615" text-anchor="middle">orders</text>
+<path d="M1290 242V690" stroke="#E2E2DE" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="1246" y="210" width="88" height="32" rx="7" fill="#FFFFFF" stroke="#161615" stroke-width="1.4"/>
+<text x="1290" y="230.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#161615" text-anchor="middle">OrderService</text>
+<path d="M1386 242V690" stroke="#E2E2DE" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="1342" y="210" width="88" height="32" rx="7" fill="#FFFFFF" stroke="#161615" stroke-width="1.4"/>
+<text x="1386" y="230.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#161615" text-anchor="middle">OrderRepo</text>
+<path d="M1482 242V690" stroke="#E2E2DE" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="1438" y="210" width="88" height="32" rx="7" fill="#FFFFFF" stroke="#161615" stroke-width="1.4"/>
+<text x="1482" y="230.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#161615" text-anchor="middle">Payment</text>
+<rect x="1190" y="286" width="8" height="364" rx="2" fill="#E7F3F8" stroke="#2383E2" stroke-width="1"/>
+<rect x="1286" y="336" width="8" height="262" rx="2" fill="#E7F3F8" stroke="#2383E2" stroke-width="1"/>
+<path d="M1102 286H1189" stroke="#161615" stroke-width="1.8"/>
+<path d="M1189 286l-9 -5v10z" fill="#161615"/>
+<text x="1146.0" y="277" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#161615" text-anchor="middle">POST /orders</text>
+<circle cx="1077" cy="286" r="11" fill="#2383E2"/>
+<text x="1077" y="290.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+<path d="M1198 336H1285" stroke="#161615" stroke-width="1.8"/>
+<path d="M1285 336l-9 -5v10z" fill="#161615"/>
+<text x="1242.0" y="327" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#161615" text-anchor="middle">place</text>
+<circle cx="1173" cy="336" r="11" fill="#2383E2"/>
+<text x="1173" y="340.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+<rect x="1268" y="368" width="182" height="70" rx="6" fill="none" stroke="#8A4FC4" stroke-dasharray="3 3" opacity=".8"/>
+<path d="M1268 368h44l6 6v12h-50z" fill="#F3ECFA"/>
+<text x="1274" y="382" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="11" font-weight="700" fill="#8A4FC4" text-anchor="start">loop</text>
+<text x="1330" y="382" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8A4FC4" text-anchor="start">for item in items</text>
+<path d="M1294 424H1381" stroke="#161615" stroke-width="1.8"/>
+<path d="M1381 424l-9 -5v10z" fill="#161615"/>
+<text x="1338.0" y="415" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#161615" text-anchor="middle">get</text>
+<circle cx="1269" cy="424" r="11" fill="#2383E2"/>
+<text x="1269" y="428.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+<path d="M1294 480H1381" stroke="#161615" stroke-width="1.8"/>
+<path d="M1381 480l-9 -5v10z" fill="#161615"/>
+<text x="1338.0" y="471" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#161615" text-anchor="middle">create</text>
+<circle cx="1269" cy="480" r="11" fill="#2383E2"/>
+<text x="1269" y="484.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+<path d="M1294 534H1477" stroke="#161615" stroke-width="1.8"/>
+<path d="M1477 534l-9 -5v10z" fill="#161615"/>
+<text x="1386.0" y="525" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#161615" text-anchor="middle">charge</text>
+<circle cx="1269" cy="534" r="11" fill="#2383E2"/>
+<text x="1269" y="538.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+<path d="M1286 596H1199" stroke="#5F5E5A" stroke-width="1.8" stroke-dasharray="6 5"/>
+<path d="M1199 596l9 -5v10z" fill="#5F5E5A"/>
+<text x="1242.0" y="587" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#5F5E5A" text-anchor="middle">return</text>
+<path d="M1190 648H1103" stroke="#5F5E5A" stroke-width="1.8" stroke-dasharray="6 5"/>
+<path d="M1103 648l9 -5v10z" fill="#5F5E5A"/>
+<text x="1146.0" y="639" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#5F5E5A" text-anchor="middle">201 Created</text>
+<text x="60" y="812" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#161615" text-anchor="start">One tree, any zoom</text>
+<rect x="252" y="793" width="84.80000000000001" height="28" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<text x="294.4" y="812" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="middle">package</text>
+<rect x="346.8" y="793" width="76.4" height="28" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<text x="385.0" y="812" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="middle">module</text>
+<rect x="433.20000000000005" y="793" width="68.0" height="28" rx="14" fill="#161615" stroke="#161615"/>
+<text x="467.20000000000005" y="812" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">class</text>
+<rect x="511.20000000000005" y="793" width="93.2" height="28" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<text x="557.8000000000001" y="812" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="middle">function</text>
+<text x="620.4000000000001" y="812" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#9A9994" text-anchor="start">·  click a call to zoom in  ·  play it arrow by arrow</text>
+<g transform="translate(1356 790) scale(.66)" fill="none"><path d="M36 10H15a5 5 0 0 0-5 5v4a5 5 0 0 0 5 5h18a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H12" stroke="#161615" stroke-width="4.2" stroke-linecap="round"/><rect x="30" y="4" width="12" height="12" rx="3.5" fill="#161615"/><rect x="18" y="18" width="12" height="12" rx="3.5" fill="#161615"/><rect x="6" y="32" width="12" height="12" rx="3.5" fill="#161615"/></g>
+<text x="1394" y="816" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" fill="#161615" letter-spacing="-0.5"><tspan font-weight="500">Vibe</tspan><tspan font-weight="800">Sequence</tspan></text>
+</svg>
+    </figure>
+    <p class="swipe">Swipe to follow the flow →</p>
     <a class="more" href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md">The engine in detail →</a>
   </section>
 
