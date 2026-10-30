@@ -92,8 +92,7 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.03em; margin: 0; }
 .more { display: inline-block; margin-top: 1.6rem; font-weight: 600; text-underline-offset: 4px; }
 
 /* hero: no card, the opening of the diagram */
-.hero { position: relative; z-index: 1; text-align: center; padding: 72px 0 28px; }
-.hero .bg { position: absolute; inset: 20px 6%; background: var(--paper); border-radius: 24px; z-index: -1; }
+.hero { margin-top: 48px; text-align: center; padding: 80px 40px 64px; }   /* a note card like the other sections */
 .eyebrow { display: inline-block; margin-bottom: 1.4rem; padding: .35rem .9rem; border: 1px solid var(--rule); border-radius: 999px;
            background: var(--card); font: 600 .78rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
 h1 { font-size: clamp(2.6rem, 7vw, 5rem); line-height: 1; font-weight: 800; letter-spacing: -.045em; margin: 0 auto 1.4rem; max-width: 14ch; }
@@ -147,7 +146,7 @@ pre.code .c { color: var(--ink-3); }
 
 @media (prefers-reduced-motion: no-preference) {
   .lanes .lane { animation: drop .5s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--n) * 70ms); }
-  .hero > :not(.bg) { animation: rise .6s ease-out both; }
+  .hero > :not(.tag) { animation: rise .6s ease-out both; }
   .hero > :nth-child(3) { animation-delay: .08s; } .hero > :nth-child(4) { animation-delay: .16s; }
   .hero > :nth-child(5) { animation-delay: .24s; } .hero > :nth-child(6) { animation-delay: .32s; }
   .note { transition: opacity .6s, transform .6s; }
@@ -163,7 +162,8 @@ pre.code .c { color: var(--ink-3); }
   .lg { display: none; } .sm { display: inline; }
   .msg .label { font-size: .78rem; } .msg .label code { font-size: .74rem; }
   .links .hide-sm { display: none; }
-  .hero { padding-top: 48px; }
+  .hero { margin-top: 28px; padding: 56px 20px 40px; }
+  .install { font-size: .9rem; gap: .5rem; } .install code { white-space: nowrap; }
 }
 </style>
 </head>
@@ -188,8 +188,8 @@ pre.code .c { color: var(--ink-3); }
     <span class="lane" style="--n:3"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M8 2.5l1.4 3.8 3.8 1.4-3.8 1.4L8 12.9 6.6 9.1 2.8 7.7l3.8-1.4L8 2.5Zm7 8.5.8 2.2 2.2.8-2.2.8L15 17l-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg><span class="lg">AI agent</span><span class="sm">AI</span></span>
   </div></div>
 
-  <section class="hero">
-    <div class="bg"></div>
+  <section class="note hero">
+    <span class="tag">note over you</span>
     <span class="eyebrow">Open source<span class="lg"> · Python · TypeScript · Go</span></span>
     <h1>See how your code <em>actually</em> flows</h1>
     <p class="lede">vibesequence reads your code and draws every route, command and handler as a zoomable sequence diagram: who calls whom, in what order.</p>
@@ -468,7 +468,7 @@ const play = group => [...group.querySelectorAll('.msg')].forEach((m, k) => setT
   m.classList.add('shown', 'drawing'); light(m, true);
   setTimeout(() => { m.classList.remove('drawing'); light(m, false); }, 1100);
 }, k * 650));
-const notes = [...document.querySelectorAll('.note')];
+const notes = [...document.querySelectorAll('.note:not(.hero)')];   // the hero animates on load
 if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
   msgs.forEach(m => m.classList.add('shown'));
 } else {
@@ -479,7 +479,7 @@ if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObs
     if (e.target.classList.contains('gap')) play(e.target);
     else e.target.classList.remove('waiting');
   }), { threshold: .35, rootMargin: '0px 0px -10% 0px' });
-  document.querySelectorAll('.gap, .note').forEach(el => io.observe(el));
+  document.querySelectorAll('.gap, .note:not(.hero)').forEach(el => io.observe(el));
 }
 
 // ---- the live-diff video plays only while it is on screen ----
