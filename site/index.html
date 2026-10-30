@@ -11,6 +11,9 @@
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232383E2'/><path d='M9 9h14M9 16h14M9 23h14' stroke='white' stroke-width='2.6' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap">
 <style>
 /* Editorial "paper and ink": a ruled frame, a big headline, one accent. System fonts only. */
 :root {
@@ -18,6 +21,7 @@
   --rule: rgba(20,20,19,.14); --blue: #2383E2; --blue-soft: #E7F3F8; --green: #448361; --green-soft: #EDF3EC;
   --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --mono: "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+  --display: "Plus Jakarta Sans", var(--font);   /* headings */
 }
 @media (prefers-color-scheme: dark) {
   :root { --paper: #161615; --paper-press: #222220; --ink: #ECECE8; --ink-2: #A9A8A2; --ink-3: #7A7974;
@@ -28,6 +32,7 @@ html { background: var(--paper); }
 body { margin: 0; font: 16px/1.5 var(--font); color: var(--ink); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 a { color: inherit; }
 code, pre { font-family: var(--mono); }
+h1, h2, h3, .stat b, .steps b, .lang b { font-family: var(--display); }
 .frame { max-width: 1440px; margin: 0 auto; border: 1px solid var(--rule); border-top: 0; }
 section, header, footer { border-bottom: 1px solid var(--rule); }
 
@@ -56,10 +61,11 @@ h1 em { font-style: normal; color: var(--blue); }
 .btn-primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .btn-primary:hover { background: transparent; color: var(--ink); }
 .btn-ghost:hover { background: var(--paper-press); }
-.install { display: inline-flex; align-items: center; gap: .6rem; border: 1px solid var(--rule); padding: .5rem .55rem .5rem .9rem; font: .95rem var(--mono); max-width: 100%; }
-.install .prompt { color: var(--ink-3); user-select: none; }
-.copy { font: 600 .78rem var(--font); color: var(--ink-2); background: none; border: 1px solid var(--rule); padding: .3rem .6rem; cursor: pointer; }
-.copy:hover { background: var(--paper-press); color: var(--ink); }
+.install { display: inline-flex; align-items: center; gap: .9rem; border: 1px solid var(--rule); padding: .7rem .8rem .7rem 1.1rem; font: 1rem var(--mono); max-width: 100%; }
+.copy { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; background: none; color: var(--ink-3); cursor: pointer; }
+.copy:hover { color: var(--ink); }
+.copy .done, .copy.copied .idle { display: none; }
+.copy.copied .done { display: block; color: var(--green); }
 
 /* the hero diagram: drawn by script below, plays arrow by arrow like the viewer */
 .seq { width: 100%; max-width: 580px; height: auto; display: block; overflow: visible; }
@@ -191,7 +197,10 @@ pre.code .c { color: var(--ink-3); }
         <a class="btn btn-primary" href="#quickstart">Get started</a>
         <a class="btn btn-ghost" href="#demo">Watch the demo</a>
       </div>
-      <div class="install"><span class="prompt">$</span><code id="installCmd">pip install vibesequence</code><button class="copy" data-copy="installCmd">Copy</button></div>
+      <div class="install"><code id="installCmd">pip install vibesequence</code><button class="copy" data-copy="installCmd" aria-label="Copy install command" title="Copy">
+        <svg class="idle" width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M13 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/></svg>
+        <svg class="done" width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></svg>
+      </button></div>
     </div>
     <div class="hero-right">
       <svg class="seq" id="seq" viewBox="0 0 600 440" role="img" aria-label="An animated sequence diagram of POST /orders: the API calls the order service, which reads and writes the repository, charges the payment gateway and, as a newly added step shown in green, sends an email receipt."></svg>
@@ -359,9 +368,14 @@ vibesequence install                 <span class="c"># teach Claude Code to use 
 
 // ---- copy the install command ----
 document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent); b.textContent = 'Copied'; }
-  catch { b.textContent = 'Select it'; }
-  setTimeout(() => b.textContent = 'Copy', 1400);
+  const code = document.getElementById(b.dataset.copy);
+  try {
+    await navigator.clipboard.writeText(code.textContent);
+    b.classList.add('copied'); b.title = 'Copied';
+    setTimeout(() => { b.classList.remove('copied'); b.title = 'Copy'; }, 1400);
+  } catch {                                       // no clipboard access: select it for a manual copy
+    getSelection().selectAllChildren(code);
+  }
 }));
 
 // ---- demo tabs ----
