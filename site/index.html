@@ -33,13 +33,13 @@
 }
 * { box-sizing: border-box; }
 html { background: var(--paper); scroll-behavior: smooth; }
-body { margin: 0; font: 16px/1.55 var(--font); color: var(--ink); -webkit-font-smoothing: antialiased; }
+body { overflow-x: clip; margin: 0; font: 16px/1.55 var(--font); color: var(--ink); -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 code, pre { font-family: var(--mono); }
 h1, h2, h3 { font-family: var(--display); letter-spacing: -.03em; margin: 0; }
 
 /* ---- nav ---- */
-.nav { max-width: 1120px; margin: 0 auto; padding: 22px 24px 10px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.nav { max-width: 1120px; margin: 0 auto 20px; padding: 22px 24px 10px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .wordmark { display: inline-flex; align-items: center; gap: .55rem; font: 1.3rem var(--display); letter-spacing: -.03em; text-decoration: none; }
 .wordmark > span { font-weight: 500; } .wordmark b { font-weight: 800; }
 .mark { width: 26px; height: 26px; flex: none; }
@@ -53,6 +53,10 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.03em; margin: 0; }
 .lifelines i { position: absolute; top: 0; bottom: 0; left: calc((var(--n) + .5) / var(--lanes) * 100%); border-left: 1.5px dashed var(--life); }
 .lanes { position: sticky; top: 0; z-index: 5; height: 64px; margin: 0 -24px; padding: 0 24px;
          background: var(--paper); }
+/* full-width bar behind the lanes; a hairline appears once it sticks to the top while scrolling */
+.lanes::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 100vw; transform: translateX(-50%); z-index: -1;
+                 background: var(--paper); border-bottom: 1px solid transparent; transition: border-color .2s; }
+.lanes.stuck::before { border-bottom-color: var(--rule); }
 .sm { display: none; }
 .lanes .in { position: relative; height: 100%; }
 .lane { position: absolute; top: 14px; left: calc((var(--n) + .5) / var(--lanes) * 100%); transform: translateX(-50%);
@@ -481,6 +485,11 @@ if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObs
   }), { threshold: .35, rootMargin: '0px 0px -10% 0px' });
   document.querySelectorAll('.gap, .note:not(.hero)').forEach(el => io.observe(el));
 }
+
+// ---- sticky lane header: show its bottom border once it is stuck to the top ----
+const lanesEl = document.querySelector('.lanes');
+const stickTest = () => lanesEl.classList.toggle('stuck', lanesEl.getBoundingClientRect().top <= 0 && scrollY > 0);
+addEventListener('scroll', stickTest, { passive: true }); stickTest();
 
 // ---- the live-diff video plays only while it is on screen ----
 const video = document.querySelector('#diff video');
