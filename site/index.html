@@ -7,367 +7,496 @@
 <meta name="description" content="vibesequence reads your code and draws every route, command and handler as a zoomable sequence diagram: who calls whom, in what order. A map for you and your AI assistant.">
 <meta property="og:title" content="vibesequence: your codebase as zoomable sequence diagrams">
 <meta property="og:description" content="Who calls whom, in what order. Zoom, play and diff the flows of your code. Python, TypeScript and Go.">
-<meta property="og:image" content="https://monkeymars.github.io/vibesequence/assets/live-diff-poster.png">
+<meta property="og:image" content="https://monkeymars.github.io/vibesequence/assets/live-diff-poster.jpg">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232383E2'/><path d='M9 9h14M9 16h14M9 23h14' stroke='white' stroke-width='2.6' stroke-linecap='round'/></svg>">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
 <style>
-/* Editorial "paper and ink": a ruled frame, a big headline, one accent. System fonts only. */
+/* The page is a sequence diagram: four lanes with lifelines down the whole page, every section is a
+   note across the lanes, and the arrows between sections are the messages that tell the story. */
 :root {
-  --paper: #FBFBF9; --paper-press: #F1F1EE; --ink: #141413; --ink-2: #5E5D59; --ink-3: #8C8B86;
-  --rule: rgba(20,20,19,.14); --blue: #2383E2; --blue-soft: #E7F3F8; --green: #448361; --green-soft: #EDF3EC;
+  --paper: #FCFCFA; --card: #FFFFFF; --press: #F3F3F0; --ink: #161615; --ink-2: #5F5E5A; --ink-3: #9A9994;
+  --rule: rgba(22,22,21,.12); --life: rgba(22,22,21,.22);
+  --blue: #2383E2; --blue-soft: #E7F3F8; --green: #3E8A5C; --green-soft: #EAF4EC;
   --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --display: "Plus Jakarta Sans", var(--font);
   --mono: "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+  --lanes: 4;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --paper: #161615; --paper-press: #222220; --ink: #ECECE8; --ink-2: #A9A8A2; --ink-3: #7A7974;
-          --rule: rgba(236,236,232,.14); --blue: #529CCA; --blue-soft: #1E3346; --green: #5BA578; --green-soft: #1F2E25; }
+  :root { --paper: #141413; --card: #1B1B1A; --press: #232321; --ink: #ECECE8; --ink-2: #A8A7A1; --ink-3: #75746F;
+          --rule: rgba(236,236,232,.12); --life: rgba(236,236,232,.2);
+          --blue: #5AA6DE; --blue-soft: #1D3242; --green: #63B183; --green-soft: #1C2D23; }
 }
 * { box-sizing: border-box; }
-html { background: var(--paper); }
-body { margin: 0; font: 16px/1.5 var(--font); color: var(--ink); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+html { background: var(--paper); scroll-behavior: smooth; }
+body { margin: 0; font: 16px/1.55 var(--font); color: var(--ink); -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 code, pre { font-family: var(--mono); }
-.frame { max-width: 1440px; margin: 0 auto; border: 1px solid var(--rule); border-top: 0; }
-section, header, footer { border-bottom: 1px solid var(--rule); }
+h1, h2, h3 { font-family: var(--display); letter-spacing: -.03em; margin: 0; }
 
-/* nav */
-.nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 2rem; border-bottom: 1px solid var(--rule); }
-.wordmark { font-size: 1.4rem; letter-spacing: -.035em; text-decoration: none; }
-.wordmark b { font-weight: 800; color: var(--blue); } .wordmark span { font-weight: 500; }
-.nav-links { display: flex; align-items: center; gap: 1.8rem; }
-.nav-links a { text-decoration: none; font-size: .98rem; }
-.nav-links a:not(.star):hover { text-decoration: underline; text-underline-offset: 4px; }
-.star { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .7rem; border: 1px solid var(--rule); font-size: .92rem; }
-.star:hover { background: var(--paper-press); }
+/* ---- nav ---- */
+.nav { max-width: 1120px; margin: 0 auto; padding: 22px 24px 10px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.wordmark { display: inline-flex; align-items: center; gap: .55rem; font: 1.3rem var(--display); letter-spacing: -.03em; text-decoration: none; }
+.wordmark > span { font-weight: 500; } .wordmark b { font-weight: 800; }
+.mark { width: 26px; height: 26px; flex: none; }
+.links { display: flex; align-items: center; gap: 1.6rem; font-size: .95rem; }
+.links a { text-decoration: none; color: var(--ink-2); } .links a:hover { color: var(--ink); }
+.links .gh { display: inline-flex; align-items: center; gap: .4rem; padding: .4rem .8rem; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink); }
 
-/* hero */
-.hero { display: grid; grid-template-columns: 1.05fr .95fr; }
-.hero-left { padding: 4.5rem 3rem 4rem; min-width: 0; }
-.hero-right { border-inline-start: 1px solid var(--rule); display: flex; align-items: center; justify-content: center; padding: 2.5rem; min-width: 0; }
-.eyebrow { display: inline-block; margin-bottom: 1.4rem; font: 600 .78rem var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
-.eyebrow a { text-underline-offset: 3px; }
-h1 { font-size: clamp(2.4rem, 6vw, 4.6rem); line-height: .98; font-weight: 800; letter-spacing: -.04em; margin: 0 0 1.6rem; }
+/* ---- the diagram: lanes, lifelines, messages ---- */
+.diagram { position: relative; max-width: 1120px; margin: 0 auto; padding: 0 24px 40px; }
+.lifelines { position: absolute; top: 0; bottom: 0; left: 24px; right: 24px; pointer-events: none; }
+.lifelines i { position: absolute; top: 0; bottom: 0; left: calc((var(--n) + .5) / var(--lanes) * 100%); border-left: 1.5px dashed var(--life); }
+.lanes { position: sticky; top: 0; z-index: 5; height: 64px; margin: 0 -24px; padding: 0 24px;
+         background: var(--paper); }
+.sm { display: none; }
+.lanes .in { position: relative; height: 100%; }
+.lane { position: absolute; top: 14px; left: calc((var(--n) + .5) / var(--lanes) * 100%); transform: translateX(-50%);
+        display: inline-flex; align-items: center; gap: .45rem; height: 36px; padding: 0 .9rem; border: 1.5px solid var(--ink);
+        border-radius: 9px; background: var(--card); font: 600 .9rem var(--display); white-space: nowrap;
+        transition: border-color .25s, background .25s, color .25s, box-shadow .25s; }
+.lane svg { width: 16px; height: 16px; flex: none; }
+.lane.you { border-color: var(--blue); background: var(--blue-soft); }
+.lane.active { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 18%, transparent); }
+
+.gap { position: relative; padding: 18px 0; }
+.msg { position: relative; height: 54px; color: var(--ink); }
+.msg .arrow { position: absolute; top: 36px; height: 2px; left: var(--l); width: var(--w); background: currentColor;
+              transform: scaleX(0); transform-origin: left; transition: transform .75s cubic-bezier(.2,.7,.2,1); }
+.msg.rtl .arrow { transform-origin: right; }
+.msg .arrow::after { content: ""; position: absolute; top: -5px; right: -2px; border-left: 10px solid currentColor;
+                     border-top: 6px solid transparent; border-bottom: 6px solid transparent; }
+.msg.rtl .arrow::after { right: auto; left: -2px; border-left: 0; border-right: 10px solid currentColor; }
+.msg .label { position: absolute; top: 6px; left: var(--c); transform: translate(-50%, 4px); padding: 0 .5rem; background: var(--paper);
+              font-size: .92rem; color: var(--ink-2); white-space: nowrap; opacity: 0; transition: opacity .35s .25s, transform .35s .25s; }
+.msg .label code { font-size: .86rem; color: var(--ink); }
+.msg.ret .arrow { background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 11px); }
+.msg.added { color: var(--green); } .msg.added .label { color: var(--green); font-weight: 600; }
+.msg.shown .arrow { transform: scaleX(1); }
+.msg.shown .label { opacity: 1; transform: translate(-50%, 0); }
+.msg.drawing { color: var(--blue); }                     /* while it plays: marching blue dashes, like the viewer */
+.msg.drawing .arrow { background: repeating-linear-gradient(90deg, currentColor 0 7px, transparent 7px 12px); animation: march .45s linear infinite; }
+.msg.rtl.drawing .arrow { animation-direction: reverse; }
+@keyframes march { to { background-position: 12px 0; } }
+
+/* ---- sections are notes over the lanes ---- */
+.note { position: relative; z-index: 1; background: var(--card); border: 1px solid var(--rule); border-radius: 16px; padding: 56px 56px 52px; }
+.tag { position: absolute; top: -1px; left: -1px; padding: 5px 16px 5px 12px; border: 1px solid var(--rule); border-radius: 16px 0 10px 0;
+       background: var(--press); font: 600 .74rem var(--mono); letter-spacing: .04em; color: var(--ink-2); text-transform: lowercase; }
+.note h2 { font-size: clamp(1.8rem, 3.6vw, 2.6rem); line-height: 1.08; font-weight: 800; margin-bottom: .8rem; }
+.note > p.sub { color: var(--ink-2); font-size: 1.08rem; max-width: 56ch; margin: 0 0 2rem; }
+.more { display: inline-block; margin-top: 1.6rem; font-weight: 600; text-underline-offset: 4px; }
+
+/* hero: no card, the opening of the diagram */
+.hero { position: relative; z-index: 1; text-align: center; padding: 72px 0 28px; }
+.hero .bg { position: absolute; inset: 20px 6%; background: var(--paper); border-radius: 24px; z-index: -1; }
+.eyebrow { display: inline-block; margin-bottom: 1.4rem; padding: .35rem .9rem; border: 1px solid var(--rule); border-radius: 999px;
+           background: var(--card); font: 600 .78rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+h1 { font-size: clamp(2.6rem, 7vw, 5rem); line-height: 1; font-weight: 800; letter-spacing: -.045em; margin: 0 auto 1.4rem; max-width: 14ch; }
 h1 em { font-style: normal; color: var(--blue); }
-.lede { font-size: 1.18rem; line-height: 1.5; color: var(--ink-2); max-width: 36ch; margin: 0 0 2.2rem; }
-.cta { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.6rem; }
-.btn { display: inline-flex; align-items: center; justify-content: center; padding: .8rem 1.5rem; font-size: 1rem; font-weight: 600;
-       text-decoration: none; border: 1px solid var(--rule); transition: background .12s, color .12s; }
+.lede { font-size: 1.2rem; color: var(--ink-2); max-width: 40ch; margin: 0 auto 2.2rem; }
+.cta { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; margin-bottom: 1.4rem; }
+.btn { display: inline-flex; align-items: center; padding: .8rem 1.5rem; border-radius: 10px; font-weight: 600; text-decoration: none;
+       border: 1px solid var(--rule); background: var(--card); transition: transform .15s, background .15s; }
+.btn:hover { transform: translateY(-1px); }
 .btn-primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.btn-primary:hover { background: transparent; color: var(--ink); }
-.btn-ghost:hover { background: var(--paper-press); }
-.install { display: inline-flex; align-items: center; gap: .6rem; border: 1px solid var(--rule); padding: .5rem .55rem .5rem .9rem; font: .95rem var(--mono); max-width: 100%; }
-.install .prompt { color: var(--ink-3); user-select: none; }
-.copy { font: 600 .78rem var(--font); color: var(--ink-2); background: none; border: 1px solid var(--rule); padding: .3rem .6rem; cursor: pointer; }
-.copy:hover { background: var(--paper-press); color: var(--ink); }
+.install { display: inline-flex; align-items: center; gap: .9rem; padding: .65rem .7rem .65rem 1.1rem; border: 1px solid var(--rule);
+           border-radius: 10px; background: var(--card); font: 1rem var(--mono); }
+.copy { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; background: none; color: var(--ink-3); cursor: pointer; }
+.copy:hover { color: var(--ink); }
+.copy .done, .copy.copied .idle { display: none; }
+.copy.copied .done { display: block; color: var(--green); }
 
-/* the hero diagram: drawn by script below, plays arrow by arrow like the viewer */
-.seq { width: 100%; max-width: 580px; height: auto; display: block; overflow: visible; }
-.seq .lane rect { fill: var(--paper); stroke: var(--ink); stroke-width: 1.3; rx: 5px; }
-.seq .lane.user rect { fill: var(--blue-soft); stroke: var(--blue); }
-.seq .lane text, .seq .msg text { font: 12px var(--mono); fill: var(--ink); text-anchor: middle; dominant-baseline: middle; }
-.seq .life { stroke: var(--rule); stroke-width: 1.2; }
-.seq .msg line { stroke: var(--ink); stroke-width: 1.4; }
-.seq .msg.ret line { stroke-dasharray: 4 4; }
-.seq .msg { opacity: 0; transition: opacity .25s; }
-.seq .msg.shown { opacity: 1; }
-.seq .msg.current line { stroke: var(--blue); stroke-width: 2.2; stroke-dasharray: 7 5; animation: march .45s linear infinite; }
-.seq .msg.current text { fill: var(--blue); font-weight: 700; }
-.seq .msg.added line { stroke: var(--green); stroke-width: 2.2; }
-.seq .msg.added text { fill: var(--green); font-weight: 700; }
-.seq .frag rect { fill: none; stroke: var(--ink-3); stroke-dasharray: 2 3; }
-.seq .frag text { font: 11px var(--mono); fill: var(--ink-2); }
-.seq .badge rect { fill: var(--green-soft); stroke: var(--green); }
-.seq .badge text { font: 700 11.5px var(--font); fill: var(--green); text-anchor: middle; dominant-baseline: middle; }
-.seq .badge { opacity: 0; transition: opacity .3s; } .seq .badge.shown { opacity: 1; }
-@keyframes march { to { stroke-dashoffset: -12; } }
-
-/* features: ruled rows of three */
-.features { display: grid; grid-template-columns: repeat(3, 1fr); }
-.features + .features { border-top: 1px solid var(--rule); }
-.feature { display: grid; grid-template-columns: auto 1px 1fr; column-gap: 1.4rem; align-items: start; padding: 2.4rem 2rem; }
-.feature + .feature { border-inline-start: 1px solid var(--rule); }
-.feature::before { content: ""; grid-column: 2; grid-row: 1 / 3; align-self: stretch; width: 1px; background: var(--rule); }
-.feature .n { grid-column: 1; grid-row: 1 / 3; font: 700 .85rem var(--mono); color: var(--ink-3); padding-top: .2rem; }
-.feature h3 { grid-column: 3; grid-row: 1; font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; margin: 0 0 .5rem; }
-.feature p { grid-column: 3; grid-row: 2; font-size: 1rem; line-height: 1.55; color: var(--ink-2); margin: 0; max-width: 36ch; }
-.feature code { font-size: .88em; color: var(--ink); }
-
-/* sections with a ruled title column */
-.block { display: grid; grid-template-columns: 340px 1fr; }
-.block > .title { padding: 3rem 2rem; border-inline-end: 1px solid var(--rule); }
-.block > .body { padding: 3rem; min-width: 0; }
-.title h2 { font-size: 2rem; line-height: 1.05; letter-spacing: -.03em; font-weight: 800; margin: 0 0 .9rem; }
-.title p { color: var(--ink-2); margin: 0; max-width: 30ch; }
-.title .more { display: inline-block; margin-top: 1.2rem; font-weight: 600; text-underline-offset: 4px; }
-
-/* demo media */
-.media { border: 1px solid var(--rule); background: var(--paper-press); }
+/* contents of the notes */
+.cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.col .n { display: block; margin-bottom: .5rem; font: 700 .8rem var(--mono); color: var(--blue); }
+.col h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: .4rem; }
+.col p { margin: 0; color: var(--ink-2); }
+.col code { font-size: .88em; color: var(--ink); }
+.illus { margin: .4rem -20px 0; overflow-x: auto; }
+.illus-svg { display: block; width: 100%; height: auto; min-width: 860px; }   /* phones: scroll sideways, never shrink to unreadable */
+.swipe { display: none; margin: .4rem 0 0; font-size: .85rem; color: var(--ink-3); }
+@media (max-width: 860px) { .swipe { display: block; } }
+@media (prefers-color-scheme: dark) {                  /* the illustration is drawn in light ink: give it its own light panel */
+  .illus { margin: .6rem 0 0; padding: 14px 10px 6px; border-radius: 12px; background: #FCFCFA; }
+}
+.media { margin: 2.2rem 0 0; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: var(--press); }
 .media video, .media img { display: block; width: 100%; height: auto; }
-.media figcaption { padding: .7rem 1rem; border-top: 1px solid var(--rule); font-size: .92rem; color: var(--ink-2); background: var(--paper); }
-.tabs { display: flex; gap: 0; margin-bottom: 1rem; border: 1px solid var(--rule); width: fit-content; }
-.tabs button { font: 600 .92rem var(--font); color: var(--ink-2); background: none; border: 0; padding: .6rem 1.1rem; cursor: pointer; }
-.tabs button + button { border-inline-start: 1px solid var(--rule); }
-.tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); }
-.panel[hidden] { display: none; }
-
-/* stats */
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--rule); }
-.stat { padding: 1.6rem 1.4rem; }
-.stat + .stat { border-inline-start: 1px solid var(--rule); }
-.stat b { display: block; font-size: 2.6rem; line-height: 1; letter-spacing: -.04em; font-weight: 800; margin-bottom: .5rem; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.stat { padding: 1.4rem 1.3rem; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper); }
+.stat b { display: block; font: 800 2.6rem/1 var(--display); letter-spacing: -.04em; margin-bottom: .55rem; }
 .stat span { color: var(--ink-2); font-size: .95rem; }
-.note { margin: 1rem 0 0; color: var(--ink-2); font-size: .95rem; max-width: 70ch; }
-
-/* steps */
-.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--rule); counter-reset: s; }
-.steps li { padding: 1.4rem 1.3rem; counter-increment: s; border-bottom: 1px solid var(--rule); }
-.steps li:not(:nth-child(3n + 1)) { border-inline-start: 1px solid var(--rule); }
-.steps li:nth-last-child(-n + 3) { border-bottom: 0; }
-.steps li::before { content: "0" counter(s); display: block; font: 700 .8rem var(--mono); color: var(--blue); margin-bottom: .5rem; }
-.steps b { display: block; margin-bottom: .3rem; }
-.steps span { color: var(--ink-2); font-size: .95rem; }
-
-/* languages + quickstart */
-.langs { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--rule); margin-bottom: 1.6rem; }
-.lang { padding: 1.3rem; } .lang + .lang { border-inline-start: 1px solid var(--rule); }
-.lang b { display: block; font-size: 1.1rem; margin-bottom: .3rem; }
-.lang span { color: var(--ink-2); font-size: .93rem; }
-.lang code { display: inline-block; margin-top: .6rem; font-size: .82rem; color: var(--ink-2); }
-pre.code { margin: 0; padding: 1.3rem 1.4rem; border: 1px solid var(--rule); background: var(--paper-press); overflow-x: auto; font-size: .92rem; line-height: 1.7; }
+.stat code { font-size: .88em; }
+.note .caveat { margin: 1.2rem 0 0; color: var(--ink-2); font-size: .95rem; }
+.langs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; }
+.lang { padding: 1.2rem 1.2rem 1.1rem; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper); }
+.lang b { display: block; font: 700 1.1rem var(--display); margin-bottom: .2rem; }
+.lang span { display: block; color: var(--ink-2); font-size: .93rem; margin-bottom: .7rem; }
+.lang code { font-size: .84rem; }
+pre.code { margin: 0; padding: 1.2rem 1.4rem; border-radius: 12px; background: var(--press); overflow-x: auto; font-size: .92rem; line-height: 1.75; }
 pre.code .c { color: var(--ink-3); }
 
-/* footer */
-.foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1.4rem 2rem; }
-.foot-mark { font-weight: 800; letter-spacing: -.03em; }
-.foot-mark span { font-weight: 400; color: var(--ink-2); margin-left: .6rem; letter-spacing: 0; font-size: .92rem; }
-.foot-links { display: flex; flex-wrap: wrap; gap: 1.6rem; }
-.foot-links a { color: var(--ink-2); text-decoration: none; font-size: .92rem; }
-.foot-links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.foot { max-width: 1120px; margin: 0 auto; padding: 8px 24px 48px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+.foot .wordmark { font-size: 1.05rem; } .foot .mark { width: 20px; height: 20px; }
+.foot nav { display: flex; flex-wrap: wrap; gap: 1.4rem; font-size: .92rem; }
+.foot nav a { color: var(--ink-2); text-decoration: none; } .foot nav a:hover { color: var(--ink); }
 
-/* entrance */
 @media (prefers-reduced-motion: no-preference) {
-  .hero-left > * { animation: rise .5s ease-out both; }
-  .hero-left > :nth-child(2) { animation-delay: .06s; } .hero-left > :nth-child(3) { animation-delay: .12s; }
-  .hero-left > :nth-child(4) { animation-delay: .18s; } .hero-left > :nth-child(5) { animation-delay: .24s; }
+  .lanes .lane { animation: drop .5s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--n) * 70ms); }
+  .hero > :not(.bg) { animation: rise .6s ease-out both; }
+  .hero > :nth-child(3) { animation-delay: .08s; } .hero > :nth-child(4) { animation-delay: .16s; }
+  .hero > :nth-child(5) { animation-delay: .24s; } .hero > :nth-child(6) { animation-delay: .32s; }
+  .note { transition: opacity .6s, transform .6s; }
+  .note.waiting { opacity: 0; transform: translateY(16px); }
 }
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes drop { from { opacity: 0; transform: translate(-50%, -8px); } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
 
-@media (max-width: 980px) {
-  .hero, .block { grid-template-columns: 1fr; }
-  .hero-right { border-inline-start: 0; border-top: 1px solid var(--rule); }
-  .block > .title { border-inline-end: 0; border-bottom: 1px solid var(--rule); }
-  .features, .steps, .langs, .stats { grid-template-columns: 1fr; }
-  .feature + .feature, .steps li:not(:nth-child(3n + 1)), .lang + .lang, .stat + .stat { border-inline-start: 0; border-top: 1px solid var(--rule); }
-  .steps li { border-bottom: 0; } .steps li + li { border-top: 1px solid var(--rule); }
-  .hero-left { padding: 3rem 1.5rem; } .block > .body, .block > .title { padding: 2rem 1.5rem; }
-  .nav { padding: 1rem 1.5rem; } .nav-links { gap: 1.1rem; } .nav-links .hide-sm { display: none; }
+@media (max-width: 860px) {
+  .note { padding: 48px 22px 28px; }
+  .cols, .stats, .langs { grid-template-columns: 1fr; gap: 1rem; }
+  .lane { padding: 0 .6rem; height: 32px; font-size: .78rem; gap: .3rem; } .lane svg { display: none; }
+  .lg { display: none; } .sm { display: inline; }
+  .msg .label { font-size: .78rem; } .msg .label code { font-size: .74rem; }
+  .links .hide-sm { display: none; }
+  .hero { padding-top: 48px; }
 }
 </style>
 </head>
 <body>
-<div class="frame">
-  <header class="nav">
-    <a class="wordmark" href="./"><b>Vibe</b><span>Sequence</span></a>
-    <nav class="nav-links">
-      <a class="hide-sm" href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md">Docs</a>
-      <a class="hide-sm" href="#benchmark">Benchmark</a>
-      <a href="https://pypi.org/project/vibesequence/">PyPI</a>
-      <a class="star" id="star" href="https://github.com/monkeymars/vibesequence">
-        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        <span id="starText">GitHub</span>
-      </a>
-    </nav>
-  </header>
+<header class="nav">
+  <a class="wordmark" href="./" aria-label="VibeSequence home"><svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M36 10H15a5 5 0 0 0-5 5v4a5 5 0 0 0 5 5h18a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H12" stroke="currentColor" stroke-width="4.2" stroke-linecap="round"/><rect x="30" y="4" width="12" height="12" rx="3.5" fill="currentColor"/><rect x="18" y="18" width="12" height="12" rx="3.5" fill="currentColor"/><rect x="6" y="32" width="12" height="12" rx="3.5" fill="currentColor"/></svg><span>Vibe<b>Sequence</b></span></a>
+  <nav class="links">
+    <a class="hide-sm" href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md">Docs</a>
+    <a class="hide-sm" href="#benchmark">Benchmark</a>
+    <a href="https://pypi.org/project/vibesequence/">PyPI</a>
+    <a class="gh" href="https://github.com/monkeymars/vibesequence"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span id="starText">GitHub</span></a>
+  </nav>
+</header>
+
+<main class="diagram">
+  <div class="lifelines" aria-hidden="true"><i style="--n:0"></i><i style="--n:1"></i><i style="--n:2"></i><i style="--n:3"></i></div>
+
+  <div class="lanes" aria-hidden="true"><div class="in">
+    <span class="lane you" style="--n:0"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-6 7c0-3 2.7-5 6-5s6 2 6 5v.5H4V17Z"/></svg>You</span>
+    <span class="lane" style="--n:1"><svg viewBox="0 0 48 48" fill="none"><path d="M36 10H15a5 5 0 0 0-5 5v4a5 5 0 0 0 5 5h18a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H12" stroke="currentColor" stroke-width="4.6" stroke-linecap="round"/><rect x="30" y="4" width="12" height="12" rx="3.5" fill="currentColor"/><rect x="18" y="18" width="12" height="12" rx="3.5" fill="currentColor"/><rect x="6" y="32" width="12" height="12" rx="3.5" fill="currentColor"/></svg><span class="lg">vibesequence</span><span class="sm">vibeseq</span></span>
+    <span class="lane" style="--n:2"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5 3 10l4 5M13 5l4 5-4 5"/></svg><span class="lg">Your code</span><span class="sm">Code</span></span>
+    <span class="lane" style="--n:3"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M8 2.5l1.4 3.8 3.8 1.4-3.8 1.4L8 12.9 6.6 9.1 2.8 7.7l3.8-1.4L8 2.5Zm7 8.5.8 2.2 2.2.8-2.2.8L15 17l-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg><span class="lg">AI agent</span><span class="sm">AI</span></span>
+  </div></div>
 
   <section class="hero">
-    <div class="hero-left">
-      <span class="eyebrow">Open source · inspired by <a href="https://github.com/Graphify-Labs/graphify">graphify</a></span>
-      <h1>See how your code <em>actually</em> flows</h1>
-      <p class="lede">vibesequence reads your code and draws every route, command and handler as a zoomable sequence diagram: who calls whom, in what order. A map for you and your AI assistant.</p>
-      <div class="cta">
-        <a class="btn btn-primary" href="#quickstart">Get started</a>
-        <a class="btn btn-ghost" href="#demo">Watch the demo</a>
-      </div>
-      <div class="install"><span class="prompt">$</span><code id="installCmd">pip install vibesequence</code><button class="copy" data-copy="installCmd">Copy</button></div>
+    <div class="bg"></div>
+    <span class="eyebrow">Open source<span class="lg"> · Python · TypeScript · Go</span></span>
+    <h1>See how your code <em>actually</em> flows</h1>
+    <p class="lede">vibesequence reads your code and draws every route, command and handler as a zoomable sequence diagram: who calls whom, in what order.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="#start">Get started</a>
+      <a class="btn" href="#explore">See it in action</a>
     </div>
-    <div class="hero-right">
-      <svg class="seq" id="seq" viewBox="0 0 600 440" role="img" aria-label="An animated sequence diagram of POST /orders: the API calls the order service, which reads and writes the repository, charges the payment gateway and, as a newly added step shown in green, sends an email receipt."></svg>
-    </div>
+    <div class="install"><code id="installCmd">pip install vibesequence</code><button class="copy" data-copy="installCmd" aria-label="Copy install command" title="Copy">
+      <svg class="idle" width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M13 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/></svg>
+      <svg class="done" width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></svg>
+    </button></div>
   </section>
 
-  <div class="features">
-    <div class="feature"><span class="n">01</span><h3>Zoom, don't scroll</h3><p>The same flow at package, module, class or function level. Click a call to open it on its own.</p></div>
-    <div class="feature"><span class="n">02</span><h3>Play a flow</h3><p>Walk it arrow by arrow, with the <code>file:line</code> of every step one click from your editor.</p></div>
-    <div class="feature"><span class="n">03</span><h3>See what changed</h3><p>While your AI edits, new steps turn green and removed ones are listed. Play only the changes.</p></div>
+  <div class="gap">
+    <div class="msg" data-from="0" data-to="1"><span class="arrow"></span><span class="label"><code>vibesequence build .</code></span></div>
+    <div class="msg" data-from="1" data-to="2"><span class="arrow"></span><span class="label">reads every file, never runs it</span></div>
+    <div class="msg ret" data-from="2" data-to="1"><span class="arrow"></span><span class="label">calls in order, with <code>if</code> / <code>loop</code> / <code>try</code></span></div>
   </div>
-  <section class="features">
-    <div class="feature"><span class="n">04</span><h3>Built for AI agents</h3><p>The same flow as compact text with <code>file:line</code>, so the assistant reads one flow, not eight files.</p></div>
-    <div class="feature"><span class="n">05</span><h3>Python, TypeScript, Go</h3><p>FastAPI, Flask, click, Next.js, Express, net/http, Gin, Echo, Chi and Cobra out of the box.</p></div>
-    <div class="feature"><span class="n">06</span><h3>Local and static</h3><p>Reads your code, never runs it. No account, no cloud: the viewer is one HTML file on your machine.</p></div>
+
+  <section class="note" id="how">
+    <span class="tag">note over vibesequence</span>
+    <h2>One static read, every flow</h2>
+    <p class="sub">A call graph tells you what is connected. vibesequence keeps what it throws away: the order of calls, and the branch around each one.</p>
+    <figure class="illus">
+<svg viewBox="0 140 1600 710" class="illus-svg" role="img" aria-label="Illustration: three Python files with numbered calls flow through vibesequence (extract, resolve, find entry points, zoom and render) into a user sequence diagram for POST /orders, where each numbered call becomes an arrow and the for loop becomes a loop box.">
+<text x="60" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#2383E2" text-anchor="start" letter-spacing="1">01</text>
+<text x="90" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#5F5E5A" text-anchor="start" letter-spacing="1.2">YOUR CODE</text>
+<text x="600" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#2383E2" text-anchor="start" letter-spacing="1">02</text>
+<text x="630" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#5F5E5A" text-anchor="start" letter-spacing="1.2">VIBESEQUENCE</text>
+<text x="1040" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#2383E2" text-anchor="start" letter-spacing="1">03</text>
+<text x="1070" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#5F5E5A" text-anchor="start" letter-spacing="1.2">USER SEQUENCE DIAGRAM</text>
+<rect x="60" y="186" width="480" height="132" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<path d="M60 224H540" stroke="#E2E2DE"/>
+<circle cx="80" cy="205" r="4" fill="#E8E8E4"/>
+<circle cx="94" cy="205" r="4" fill="#E8E8E4"/>
+<circle cx="108" cy="205" r="4" fill="#E8E8E4"/>
+<text x="128" y="210" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="start">app/api/orders.py</text>
+<rect x="79.0" y="235" width="199.89" height="21" rx="4" fill="#E7F3F8"/>
+<text x="82" y="250" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve"><tspan fill="#2383E2">@router.post(<tspan fill="#3E8A5C">&quot;/orders&quot;</tspan>)</tspan></text>
+<circle cx="514" cy="245" r="11" fill="#2383E2"/>
+<text x="514" y="249.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+<text x="82" y="274" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve"><tspan fill="#8A4FC4">def </tspan>create_order(payload):</text>
+<rect x="171.73" y="283" width="208.32" height="21" rx="4" fill="#E7F3F8"/>
+<text x="82" y="298" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">    <tspan fill="#8A4FC4">return </tspan>svc.place(payload.items)</text>
+<circle cx="514" cy="293" r="11" fill="#2383E2"/>
+<text x="514" y="297.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+<rect x="60" y="336" width="480" height="232" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<path d="M60 374H540" stroke="#E2E2DE"/>
+<circle cx="80" cy="355" r="4" fill="#E8E8E4"/>
+<circle cx="94" cy="355" r="4" fill="#E8E8E4"/>
+<circle cx="108" cy="355" r="4" fill="#E8E8E4"/>
+<text x="128" y="360" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="start">app/services/order_service.py</text>
+<text x="82" y="400" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve"><tspan fill="#8A4FC4">class </tspan>OrderService:</text>
+<text x="82" y="424" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">    <tspan fill="#8A4FC4">def </tspan>place(self, items):</text>
+<text x="82" y="448" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">        <tspan fill="#8A4FC4">for </tspan>item<tspan fill="#8A4FC4"> in </tspan>items:</text>
+<rect x="180.16" y="457" width="199.89" height="21" rx="4" fill="#E7F3F8"/>
+<text x="82" y="472" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">            self.repo.get(item.sku)</text>
+<circle cx="514" cy="467" r="11" fill="#2383E2"/>
+<text x="514" y="471.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+<rect x="213.88" y="481" width="199.89" height="21" rx="4" fill="#E7F3F8"/>
+<text x="82" y="496" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">        order = self.repo.create(items)</text>
+<circle cx="514" cy="491" r="11" fill="#2383E2"/>
+<text x="514" y="495.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+<rect x="146.44" y="505" width="233.60999999999999" height="21" rx="4" fill="#E7F3F8"/>
+<text x="82" y="520" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">        self.payments.charge(order)</text>
+<circle cx="514" cy="515" r="11" fill="#2383E2"/>
+<text x="514" y="519.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+<text x="82" y="544" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">        <tspan fill="#8A4FC4">return </tspan>order</text>
+<path d="M74 437v90" stroke="#8A4FC4" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+<rect x="60" y="586" width="480" height="132" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<path d="M60 624H540" stroke="#E2E2DE"/>
+<circle cx="80" cy="605" r="4" fill="#E8E8E4"/>
+<circle cx="94" cy="605" r="4" fill="#E8E8E4"/>
+<circle cx="108" cy="605" r="4" fill="#E8E8E4"/>
+<text x="128" y="610" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="start">app/repos/order_repo.py</text>
+<text x="82" y="650" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve"><tspan fill="#8A4FC4">class </tspan>OrderRepo(BaseRepo):</text>
+<text x="82" y="674" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">    <tspan fill="#8A4FC4">def </tspan>get(self, sku): ...</text>
+<text x="82" y="698" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="14" fill="#161615" xml:space="preserve">    <tspan fill="#8A4FC4">def </tspan>create(self, items): ...</text>
+<text x="60" y="752" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#9A9994" text-anchor="start">Calls are kept in source order, with the if / loop / try around them.</text>
+<path d="M552 452h28m-9-9 9 9-9 9" stroke="#9A9994" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M992 452h28m-9-9 9 9-9 9" stroke="#9A9994" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="600" y="186" width="380" height="110" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<rect x="620" y="208" width="30" height="30" rx="8" fill="#E7F3F8"/>
+<text x="635" y="228" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="800" fill="#2383E2" text-anchor="middle">1</text>
+<text x="666" y="229" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#161615" text-anchor="start" letter-spacing="-0.3">Extract</text>
+<text x="666" y="256" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">every call, in source order,</text>
+<text x="666" y="277" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">with its if / loop / try</text>
+<path d="M790.0 298v20m-6-6 6 6 6-6" stroke="#9A9994" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="600" y="322" width="380" height="110" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<rect x="620" y="344" width="30" height="30" rx="8" fill="#E7F3F8"/>
+<text x="635" y="364" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="800" fill="#2383E2" text-anchor="middle">2</text>
+<text x="666" y="365" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#161615" text-anchor="start" letter-spacing="-0.3">Resolve</text>
+<text x="666" y="392" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">self.repo.get  →  OrderRepo.get</text>
+<text x="666" y="413" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">through imports and inheritance</text>
+<path d="M790.0 434v20m-6-6 6 6 6-6" stroke="#9A9994" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="600" y="458" width="380" height="110" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<rect x="620" y="480" width="30" height="30" rx="8" fill="#E7F3F8"/>
+<text x="635" y="500" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="800" fill="#2383E2" text-anchor="middle">3</text>
+<text x="666" y="501" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#161615" text-anchor="start" letter-spacing="-0.3">Find entry points</text>
+<text x="666" y="528" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">@router.post(&quot;/orders&quot;)</text>
+<text x="666" y="549" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">→  the flow  POST /orders</text>
+<path d="M790.0 570v20m-6-6 6 6 6-6" stroke="#9A9994" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="600" y="594" width="380" height="110" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<rect x="620" y="616" width="30" height="30" rx="8" fill="#E7F3F8"/>
+<text x="635" y="636" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="800" fill="#2383E2" text-anchor="middle">4</text>
+<text x="666" y="637" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#161615" text-anchor="start" letter-spacing="-0.3">Zoom &amp; render</text>
+<text x="666" y="664" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">pick lanes: package … function</text>
+<text x="666" y="685" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" fill="#5F5E5A" text-anchor="start">→  a Mermaid sequence diagram</text>
+<rect x="1040" y="186" width="500" height="532" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<path d="M1098 242V690" stroke="#E2E2DE" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="1054" y="210" width="88" height="32" rx="7" fill="#E7F3F8" stroke="#2383E2" stroke-width="1.4"/>
+<text x="1098" y="230.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#161615" text-anchor="middle">User</text>
+<path d="M1194 242V690" stroke="#E2E2DE" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="1150" y="210" width="88" height="32" rx="7" fill="#FFFFFF" stroke="#161615" stroke-width="1.4"/>
+<text x="1194" y="230.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#161615" text-anchor="middle">orders</text>
+<path d="M1290 242V690" stroke="#E2E2DE" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="1246" y="210" width="88" height="32" rx="7" fill="#FFFFFF" stroke="#161615" stroke-width="1.4"/>
+<text x="1290" y="230.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#161615" text-anchor="middle">OrderService</text>
+<path d="M1386 242V690" stroke="#E2E2DE" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="1342" y="210" width="88" height="32" rx="7" fill="#FFFFFF" stroke="#161615" stroke-width="1.4"/>
+<text x="1386" y="230.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#161615" text-anchor="middle">OrderRepo</text>
+<path d="M1482 242V690" stroke="#E2E2DE" stroke-width="1.5" stroke-dasharray="4 4"/>
+<rect x="1438" y="210" width="88" height="32" rx="7" fill="#FFFFFF" stroke="#161615" stroke-width="1.4"/>
+<text x="1482" y="230.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#161615" text-anchor="middle">Payment</text>
+<rect x="1190" y="286" width="8" height="364" rx="2" fill="#E7F3F8" stroke="#2383E2" stroke-width="1"/>
+<rect x="1286" y="336" width="8" height="262" rx="2" fill="#E7F3F8" stroke="#2383E2" stroke-width="1"/>
+<path d="M1102 286H1189" stroke="#161615" stroke-width="1.8"/>
+<path d="M1189 286l-9 -5v10z" fill="#161615"/>
+<text x="1146.0" y="277" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#161615" text-anchor="middle">POST /orders</text>
+<circle cx="1077" cy="286" r="11" fill="#2383E2"/>
+<text x="1077" y="290.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+<path d="M1198 336H1285" stroke="#161615" stroke-width="1.8"/>
+<path d="M1285 336l-9 -5v10z" fill="#161615"/>
+<text x="1242.0" y="327" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#161615" text-anchor="middle">place</text>
+<circle cx="1173" cy="336" r="11" fill="#2383E2"/>
+<text x="1173" y="340.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+<rect x="1268" y="368" width="182" height="70" rx="6" fill="none" stroke="#8A4FC4" stroke-dasharray="3 3" opacity=".8"/>
+<path d="M1268 368h44l6 6v12h-50z" fill="#F3ECFA"/>
+<text x="1274" y="382" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="11" font-weight="700" fill="#8A4FC4" text-anchor="start">loop</text>
+<text x="1330" y="382" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="11" font-weight="400" fill="#8A4FC4" text-anchor="start">for item in items</text>
+<path d="M1294 424H1381" stroke="#161615" stroke-width="1.8"/>
+<path d="M1381 424l-9 -5v10z" fill="#161615"/>
+<text x="1338.0" y="415" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#161615" text-anchor="middle">get</text>
+<circle cx="1269" cy="424" r="11" fill="#2383E2"/>
+<text x="1269" y="428.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+<path d="M1294 480H1381" stroke="#161615" stroke-width="1.8"/>
+<path d="M1381 480l-9 -5v10z" fill="#161615"/>
+<text x="1338.0" y="471" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#161615" text-anchor="middle">create</text>
+<circle cx="1269" cy="480" r="11" fill="#2383E2"/>
+<text x="1269" y="484.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+<path d="M1294 534H1477" stroke="#161615" stroke-width="1.8"/>
+<path d="M1477 534l-9 -5v10z" fill="#161615"/>
+<text x="1386.0" y="525" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#161615" text-anchor="middle">charge</text>
+<circle cx="1269" cy="534" r="11" fill="#2383E2"/>
+<text x="1269" y="538.5" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+<path d="M1286 596H1199" stroke="#5F5E5A" stroke-width="1.8" stroke-dasharray="6 5"/>
+<path d="M1199 596l9 -5v10z" fill="#5F5E5A"/>
+<text x="1242.0" y="587" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#5F5E5A" text-anchor="middle">return</text>
+<path d="M1190 648H1103" stroke="#5F5E5A" stroke-width="1.8" stroke-dasharray="6 5"/>
+<path d="M1103 648l9 -5v10z" fill="#5F5E5A"/>
+<text x="1146.0" y="639" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#5F5E5A" text-anchor="middle">201 Created</text>
+<text x="60" y="812" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#161615" text-anchor="start">One tree, any zoom</text>
+<rect x="252" y="793" width="84.80000000000001" height="28" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<text x="294.4" y="812" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="middle">package</text>
+<rect x="346.8" y="793" width="76.4" height="28" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<text x="385.0" y="812" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="middle">module</text>
+<rect x="433.20000000000005" y="793" width="68.0" height="28" rx="14" fill="#161615" stroke="#161615"/>
+<text x="467.20000000000005" y="812" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">class</text>
+<rect x="511.20000000000005" y="793" width="93.2" height="28" rx="14" fill="#FFFFFF" stroke="#E2E2DE"/>
+<text x="557.8000000000001" y="812" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="middle">function</text>
+<text x="620.4000000000001" y="812" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#9A9994" text-anchor="start">·  click a call to zoom in  ·  play it arrow by arrow</text>
+<g transform="translate(1356 790) scale(.66)" fill="none"><path d="M36 10H15a5 5 0 0 0-5 5v4a5 5 0 0 0 5 5h18a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H12" stroke="#161615" stroke-width="4.2" stroke-linecap="round"/><rect x="30" y="4" width="12" height="12" rx="3.5" fill="#161615"/><rect x="18" y="18" width="12" height="12" rx="3.5" fill="#161615"/><rect x="6" y="32" width="12" height="12" rx="3.5" fill="#161615"/></g>
+<text x="1394" y="816" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" fill="#161615" letter-spacing="-0.5"><tspan font-weight="500">Vibe</tspan><tspan font-weight="800">Sequence</tspan></text>
+</svg>
+    </figure>
+    <p class="swipe">Swipe to follow the flow →</p>
+    <a class="more" href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md">The engine in detail →</a>
   </section>
 
-  <section class="block" id="demo">
-    <div class="title">
-      <h2>Watch it work</h2>
-      <p>Explore any flow, or keep the viewer open while your AI edits the code and see exactly what changed.</p>
+  <div class="gap">
+    <div class="msg" data-from="1" data-to="0"><span class="arrow"></span><span class="label">a zoomable sequence diagram</span></div>
+  </div>
+
+  <section class="note" id="explore">
+    <span class="tag">note over you</span>
+    <h2>Read any flow like a story</h2>
+    <p class="sub">Pick a route, press play, and follow it arrow by arrow. Zoom out to packages or in to a single function.</p>
+    <div class="cols">
+      <div class="col"><span class="n">zoom</span><h3>Four levels</h3><p>Package, module, class or function. Click a blue call to open it on its own.</p></div>
+      <div class="col"><span class="n">play</span><h3>Step by step</h3><p>Each step shows who calls whom and the <code>file:line</code>, one click from your editor.</p></div>
+      <div class="col"><span class="n">languages</span><h3>Python, TS, Go</h3><p>FastAPI, Flask, Next.js, Express, net/http, Gin, Echo, Chi, Cobra.</p></div>
     </div>
-    <div class="body">
-      <div class="tabs" role="tablist">
-        <button role="tab" aria-selected="true" aria-controls="p-diff" id="t-diff">Live diff</button>
-        <button role="tab" aria-selected="false" aria-controls="p-explore" id="t-explore">Explore a flow</button>
-      </div>
-      <figure class="media panel" id="p-diff" role="tabpanel" aria-labelledby="t-diff">
-        <video src="assets/live-diff.mp4" poster="assets/live-diff-poster.png" autoplay muted loop playsinline preload="metadata"></video>
-        <figcaption>The code changes while the viewer is open: the new step turns green, the removed one is listed, and “Play changes” walks just that.</figcaption>
-      </figure>
-      <figure class="media panel" id="p-explore" role="tabpanel" aria-labelledby="t-explore" hidden>
-        <img src="assets/explore.gif" alt="Opening a flow, playing it step by step, switching zoom levels and zooming into a call in the vibesequence viewer" loading="lazy">
-        <figcaption>Pick a flow, play it, switch zoom levels, click a blue call to zoom in.</figcaption>
-      </figure>
-    </div>
+    <figure class="media"><img src="assets/explore.gif" alt="Opening a flow, playing it step by step, switching zoom levels and zooming into a call in the vibesequence viewer" loading="lazy"></figure>
   </section>
 
-  <section class="block" id="benchmark">
-    <div class="title">
-      <h2>Fewer tokens to understand code</h2>
-      <p>Claude Code on the same tasks, with and without vibesequence. 42 runs, every answer graded.</p>
-      <a class="more" href="https://github.com/monkeymars/vibesequence/blob/main/docs/benchmark/README.md">Read the benchmark →</a>
-    </div>
-    <div class="body">
-      <div class="stats">
-        <div class="stat"><b>−23%</b><span>input tokens on “what happens when…” and “what breaks if…” questions</span></div>
-        <div class="stat"><b>8 → 4</b><span>agent turns for the same question</span></div>
-        <div class="stat"><b>−53%</b><span>tokens on impact questions: one <code>callers</code> call replaced 6–7 searches</span></div>
-      </div>
-      <p class="note">Honest caveat: on small edits it cost +19%, because the agent still reads the files it changes. The win is understanding code before you touch it.</p>
-    </div>
+  <div class="gap">
+    <div class="msg" data-from="3" data-to="2"><span class="arrow"></span><span class="label">edits <code>OrderService.place</code></span></div>
+    <div class="msg added" data-from="1" data-to="0"><span class="arrow"></span><span class="label">+1 step · −1 removed</span></div>
+  </div>
+
+  <section class="note" id="diff">
+    <span class="tag">note over you, ai agent</span>
+    <h2>See what your AI changed</h2>
+    <p class="sub">Keep the viewer open while the agent works. New steps turn green, removed ones are listed, and “Play changes” walks just those.</p>
+    <figure class="media"><video src="assets/live-diff.mp4" poster="assets/live-diff-poster.jpg" muted loop playsinline preload="metadata"></video></figure>
   </section>
 
-  <section class="block" id="how">
-    <div class="title">
-      <h2>How it works</h2>
-      <p>Static analysis that keeps what a call graph throws away: the order of calls, and the <code>if</code>, loop or <code>try</code> around each one.</p>
-      <a class="more" href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md">The engine in detail →</a>
+  <div class="gap">
+    <div class="msg" data-from="3" data-to="1"><span class="arrow"></span><span class="label"><code>show "POST /orders" --format text</code></span></div>
+    <div class="msg ret" data-from="1" data-to="3"><span class="arrow"></span><span class="label">one flow, with <code>file:line</code></span></div>
+  </div>
+
+  <section class="note" id="benchmark">
+    <span class="tag">note over ai agent</span>
+    <h2>Fewer tokens to understand code</h2>
+    <p class="sub">Claude Code on the same tasks, with and without vibesequence. 42 runs, every answer graded.</p>
+    <div class="stats">
+      <div class="stat"><b>−23%</b><span>input tokens on “what happens when…” questions</span></div>
+      <div class="stat"><b>8 → 4</b><span>agent turns for the same question</span></div>
+      <div class="stat"><b>−53%</b><span>tokens on impact questions: one <code>callers</code> call, not 6–7 searches</span></div>
     </div>
-    <div class="body">
-      <ol class="steps">
-        <li><b>Extract</b><span>Parse every file; record each call in order, with its control flow.</span></li>
-        <li><b>Resolve</b><span>Trace <code>self.orders.create</code> to <code>OrderRepo.create</code>, through imports and inheritance.</span></li>
-        <li><b>Find entry points</b><span>Routes, CLI commands and handlers become flows, where the User starts.</span></li>
-        <li><b>Expand</b><span>Walk each flow into a tree of steps, down to the depth you choose.</span></li>
-        <li><b>Zoom</b><span>Pick package, module, class or function as the lanes; calls inside a lane fold away.</span></li>
-        <li><b>Render</b><span>A Mermaid diagram for you, and compact text with <code>file:line</code> for the AI.</span></li>
-      </ol>
-    </div>
+    <p class="caveat">Small edits cost 19% more: the agent still reads the files it changes. The win is understanding code before you touch it.</p>
+    <a class="more" href="https://github.com/monkeymars/vibesequence/blob/main/docs/benchmark/README.md">Read the benchmark →</a>
   </section>
 
-  <section class="block" id="quickstart">
-    <div class="title">
-      <h2>Quickstart</h2>
-      <p>Python 3.10+. Builds are incremental: a rebuild only re-parses the files that changed.</p>
-      <a class="more" href="https://github.com/monkeymars/vibesequence#readme">README →</a>
+  <div class="gap">
+    <div class="msg" data-from="0" data-to="1"><span class="arrow"></span><span class="label"><code>pip install vibesequence</code></span></div>
+  </div>
+
+  <section class="note" id="start">
+    <span class="tag">note over you, vibesequence</span>
+    <h2>Get started</h2>
+    <p class="sub">Python 3.10+. Builds are incremental: a rebuild only re-parses the files that changed.</p>
+    <div class="langs">
+      <div class="lang"><b>Python</b><span>FastAPI, Flask, click, typer</span><code>pip install vibesequence</code></div>
+      <div class="lang"><b>TypeScript / JS</b><span>Next.js, pages/api, Express</span><code>pip install "vibesequence[ts]"</code></div>
+      <div class="lang"><b>Go</b><span>net/http, Gin, Echo, Chi, Cobra</span><code>pip install "vibesequence[go]"</code></div>
     </div>
-    <div class="body">
-      <div class="langs">
-        <div class="lang"><b>Python</b><span>FastAPI, Flask, click, typer. No dependencies.</span><br><code>pip install vibesequence</code></div>
-        <div class="lang"><b>TypeScript / JS</b><span>Next.js App Router, pages/api, Express.</span><br><code>pip install "vibesequence[ts]"</code></div>
-        <div class="lang"><b>Go</b><span>net/http, Gin, Echo, Chi, Fiber, Cobra.</span><br><code>pip install "vibesequence[go]"</code></div>
-      </div>
 <pre class="code"><span class="c"># in your project</span>
 vibesequence build .                 <span class="c"># parse the repo into vibesequence-out/</span>
 vibesequence serve                   <span class="c"># live viewer at http://127.0.0.1:8765</span>
-vibesequence show "POST /orders" --format text   <span class="c"># one flow, for your AI</span>
 vibesequence install                 <span class="c"># teach Claude Code to use the flows</span></pre>
-    </div>
   </section>
 
-  <footer class="foot">
-    <div class="foot-mark">vibesequence<span>MIT · inspired by graphify</span></div>
-    <nav class="foot-links">
-      <a href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md">Docs</a>
-      <a href="https://github.com/monkeymars/vibesequence">GitHub</a>
-      <a href="https://pypi.org/project/vibesequence/">PyPI</a>
-      <a href="https://github.com/monkeymars/vibesequence/blob/main/LICENSE">MIT License</a>
-    </nav>
-  </footer>
-</div>
+  <div class="gap">
+    <div class="msg ret" data-from="1" data-to="0"><span class="arrow"></span><span class="label">your codebase, mapped</span></div>
+  </div>
+</main>
+
+<footer class="foot">
+  <a class="wordmark" href="./"><svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M36 10H15a5 5 0 0 0-5 5v4a5 5 0 0 0 5 5h18a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H12" stroke="currentColor" stroke-width="4.2" stroke-linecap="round"/><rect x="30" y="4" width="12" height="12" rx="3.5" fill="currentColor"/><rect x="18" y="18" width="12" height="12" rx="3.5" fill="currentColor"/><rect x="6" y="32" width="12" height="12" rx="3.5" fill="currentColor"/></svg><span>Vibe<b>Sequence</b></span></a>
+  <nav>
+    <a href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md">Docs</a>
+    <a href="https://github.com/monkeymars/vibesequence">GitHub</a>
+    <a href="https://pypi.org/project/vibesequence/">PyPI</a>
+    <a href="https://github.com/monkeymars/vibesequence/blob/main/LICENSE">MIT License</a>
+  </nav>
+</footer>
 
 <script>
-// ---- hero diagram: lanes + messages, played one arrow at a time like the viewer's Play ----
-(() => {
-  const svg = document.getElementById('seq'), NS = 'http://www.w3.org/2000/svg';
-  const lanes = ['User', 'api', 'OrderService', 'OrderRepo', 'Payment', 'Email'];
-  const x = i => 50 + i * 100, top = 22, laneH = 30;
-  //  [from, to, label, y, kind]   kind: '' call, 'ret' return, 'added' new step (green)
-  const msgs = [
-    [0, 1, 'POST /orders', 92, ''],
-    [1, 2, 'place', 128, ''],
-    [2, 3, 'get', 190, ''],
-    [2, 3, 'create', 236, ''],
-    [2, 4, 'charge', 276, ''],
-    [2, 5, 'send_receipt', 324, 'added'],
-    [2, 1, 'return', 362, 'ret'],
-    [1, 0, '201 Created', 396, 'ret'],
-  ];
-  const el = (tag, attrs, parent = svg) => {
-    const n = document.createElementNS(NS, tag);
-    for (const k in attrs) n.setAttribute(k, attrs[k]);
-    parent.appendChild(n); return n;
-  };
-  lanes.forEach((name, i) => {
-    el('line', { class: 'life', x1: x(i), y1: top + laneH, x2: x(i), y2: 420 });
-    const g = el('g', { class: 'lane' + (i ? '' : ' user') });
-    el('rect', { x: x(i) - 47, y: top, width: 94, height: laneH, rx: 5 }, g);
-    el('text', { x: x(i), y: top + laneH / 2 }, g).textContent = name;
-  });
-  // fragment box around the loop, like `loop for item in items`
-  const loop = el('g', { class: 'frag' });
-  el('rect', { x: x(2) - 20, y: 146, width: x(3) - x(2) + 56, height: 56 }, loop);
-  el('text', { x: x(2) - 13, y: 159 }, loop).textContent = 'loop for item in items';
-  const shown = msgs.map(([a, b, label, y, kind]) => {
-    const g = el('g', { class: 'msg ' + kind });
-    const dir = b > a ? 1 : -1;
-    el('line', { x1: x(a), y1: y, x2: x(b) - dir * 6, y2: y }, g);
-    el('path', { d: `M${x(b)} ${y} l${-dir * 8} -4.5 v9 z`, fill: kind === 'added' ? 'var(--green)' : 'var(--ink)' }, g);
-    el('text', { x: (x(a) + x(b)) / 2, y: y - 11 }, g).textContent = label;
-    return g;
-  });
-  const badge = el('g', { class: 'badge' });
-  el('rect', { x: x(5) - 42, y: 339, width: 84, height: 22, rx: 11 }, badge);
-  el('text', { x: x(5), y: 350 }, badge).textContent = '+1 new step';
+// ---- messages: place each arrow between its two lanes ----
+const LANES = 4, laneX = i => (i + .5) / LANES * 100;
+const lanes = [...document.querySelectorAll('.lane')];
+const msgs = [...document.querySelectorAll('.msg')];
+for (const m of msgs) {
+  const a = +m.dataset.from, b = +m.dataset.to, lo = Math.min(a, b), hi = Math.max(a, b);
+  m.style.setProperty('--l', laneX(lo) + '%');
+  m.style.setProperty('--w', laneX(hi) - laneX(lo) + '%');
+  m.style.setProperty('--c', (laneX(lo) + laneX(hi)) / 2 + '%');
+  m.classList.toggle('rtl', b < a);
+}
 
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    shown.forEach(g => g.classList.add('shown')); badge.classList.add('shown'); return;
-  }
-  let i = 0;
-  const tick = () => {
-    if (i === msgs.length) {                     // hold the finished diagram, then start over
-      shown.forEach(g => g.classList.remove('current'));
-      return setTimeout(() => { shown.forEach(g => g.classList.remove('shown')); badge.classList.remove('shown'); i = 0; setTimeout(tick, 600); }, 3200);
-    }
-    shown.forEach(g => g.classList.remove('current'));
-    shown[i].classList.add('shown', 'current');
-    if (msgs[i][4] === 'added') badge.classList.add('shown');
-    i++; setTimeout(tick, msgs[i - 1][4] === 'added' ? 1500 : 800);
-  };
-  setTimeout(tick, 700);
-})();
+// ---- play each group of arrows as it scrolls into view, like the viewer's Play ----
+const light = (m, on) => [m.dataset.from, m.dataset.to].forEach(i => lanes[i].classList.toggle('active', on));
+const play = group => [...group.querySelectorAll('.msg')].forEach((m, k) => setTimeout(() => {
+  m.classList.add('shown', 'drawing'); light(m, true);
+  setTimeout(() => { m.classList.remove('drawing'); light(m, false); }, 1100);
+}, k * 650));
+const notes = [...document.querySelectorAll('.note')];
+if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+  msgs.forEach(m => m.classList.add('shown'));
+} else {
+  notes.forEach(n => n.classList.add('waiting'));
+  const io = new IntersectionObserver(entries => entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    io.unobserve(e.target);
+    if (e.target.classList.contains('gap')) play(e.target);
+    else e.target.classList.remove('waiting');
+  }), { threshold: .35, rootMargin: '0px 0px -10% 0px' });
+  document.querySelectorAll('.gap, .note').forEach(el => io.observe(el));
+}
+
+// ---- the live-diff video plays only while it is on screen ----
+const video = document.querySelector('#diff video');
+new IntersectionObserver(([e]) => e.isIntersecting ? video.play().catch(() => {}) : video.pause(), { threshold: .4 }).observe(video);
 
 // ---- copy the install command ----
 document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent); b.textContent = 'Copied'; }
-  catch { b.textContent = 'Select it'; }
-  setTimeout(() => b.textContent = 'Copy', 1400);
+  const code = document.getElementById(b.dataset.copy);
+  try {
+    await navigator.clipboard.writeText(code.textContent);
+    b.classList.add('copied'); b.title = 'Copied';
+    setTimeout(() => { b.classList.remove('copied'); b.title = 'Copy'; }, 1400);
+  } catch {                                       // no clipboard access: select it for a manual copy
+    getSelection().selectAllChildren(code);
+  }
 }));
-
-// ---- demo tabs ----
-const tabs = [...document.querySelectorAll('[role=tab]')];
-tabs.forEach(t => t.addEventListener('click', () => tabs.forEach(o => {
-  const on = o === t; o.setAttribute('aria-selected', on);
-  const panel = document.getElementById(o.getAttribute('aria-controls')); panel.hidden = !on;
-  const v = panel.querySelector('video'); if (v) on ? v.play() : v.pause();
-})));
 
 // ---- GitHub stars (best effort; the link works without it) ----
 fetch('https://api.github.com/repos/monkeymars/vibesequence').then(r => r.ok ? r.json() : null).then(d => {
