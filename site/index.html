@@ -146,7 +146,9 @@ h1 em { font-style: normal; color: var(--blue); }
 pre.code { margin: 0; padding: 1.2rem 1.4rem; border-radius: 12px; background: var(--press); overflow-x: auto; font-size: .92rem; line-height: 1.75; }
 pre.code .c { color: var(--ink-3); }
 
-.foot { max-width: 1120px; margin: 0 auto; padding: 8px 24px 48px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+.foot { position: relative; max-width: 1120px; margin: 0 auto; padding: 28px 24px 48px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+/* full-width hairline above the footer, like the sticky header's */
+.foot::before { content: ""; position: absolute; top: 0; left: 50%; width: 100vw; transform: translateX(-50%); border-top: 1px solid var(--rule); }
 .foot .wordmark { font-size: 1.05rem; } .foot .mark { width: 20px; height: 20px; }
 .foot nav { display: flex; flex-wrap: wrap; gap: 1.4rem; font-size: .92rem; }
 .foot nav a { color: var(--ink-2); text-decoration: none; } .foot nav a:hover { color: var(--ink); }
