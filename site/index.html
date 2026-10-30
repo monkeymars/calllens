@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>vibesequence: your codebase as zoomable sequence diagrams</title>
-<meta name="description" content="vibesequence reads your code and draws every route, command and handler as a zoomable sequence diagram: who calls whom, in what order. A map for you and your AI assistant.">
-<meta property="og:title" content="vibesequence: your codebase as zoomable sequence diagrams">
+<title>vibesequence: living docs for you and your AI assistant</title>
+<meta name="description" content="vibesequence reads your code and draws every route, command and handler as a zoomable sequence diagram: who calls whom, in what order. Living documentation for your codebase, for you, your team and your AI assistant.">
+<meta property="og:title" content="vibesequence: living docs for you and your AI assistant">
 <meta property="og:description" content="Who calls whom, in what order. Zoom, play and diff the flows of your code. Python, TypeScript and Go.">
 <meta property="og:image" content="https://monkeymars.github.io/vibesequence/assets/live-diff-poster.jpg">
 <meta property="og:type" content="website">
@@ -100,8 +100,17 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.03em; margin: 0; }
 
 /* hero: no card, the opening of the diagram */
 .hero { margin-top: 48px; text-align: center; padding: 80px 40px 64px; }   /* a note card like the other sections */
-.eyebrow { display: inline-block; margin-bottom: 1.4rem; padding: .35rem .9rem; border: 1px solid var(--rule); border-radius: 999px;
-           background: var(--card); font: 600 .78rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; text-align: left; }
+.hero-grid h1 { font-size: clamp(2.6rem, 5.2vw, 4.3rem); margin-left: 0; }
+.hero-grid .lede { margin-left: 0; }
+.hero-grid .cta { justify-content: flex-start; }
+.hero-art { margin: 0; }
+.hero-art svg { display: block; width: 100%; height: auto; max-width: 480px; margin-left: auto; border-radius: 12px; overflow: hidden; }
+@media (max-width: 980px) {
+  .hero-grid { grid-template-columns: 1fr; text-align: center; }
+  .hero-grid h1, .hero-grid .lede { margin-left: auto; } .hero-grid .cta { justify-content: center; }
+  .hero-art svg { margin: 8px auto 0; }
+}
 h1 { font-size: clamp(2.6rem, 7vw, 5rem); line-height: 1; font-weight: 800; letter-spacing: -.045em; margin: 0 auto 1.4rem; max-width: 14ch; }
 h1 em { font-style: normal; color: var(--blue); }
 .lede { font-size: 1.2rem; color: var(--ink-2); max-width: 40ch; margin: 0 auto 2.2rem; }
@@ -199,9 +208,10 @@ pre.code .c { color: var(--ink-3); }
 
   <section class="note hero">
     <span class="tag">note over you</span>
-    <span class="eyebrow">Open source<span class="lg"> · Python · TypeScript · Go</span></span>
-    <h1>See how your code <em>actually</em> flows</h1>
-    <p class="lede">vibesequence reads your code and draws every route, command and handler as a zoomable sequence diagram: who calls whom, in what order.</p>
+    <div class="hero-grid">
+    <div class="hero-text">
+    <h1><em>Living</em> docs for you and your AI assistant</h1>
+    <p class="lede">vibesequence reads your code and draws every route, command and handler as a zoomable sequence diagram: who calls whom, in what order. Always up to date, because it's drawn from the code itself.</p>
     <div class="cta">
       <a class="btn btn-primary" href="#start">Get started</a>
       <a class="btn" href="#explore">See it in action</a>
@@ -210,6 +220,11 @@ pre.code .c { color: var(--ink-3); }
       <svg class="idle" width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M13 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/></svg>
       <svg class="done" width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></svg>
     </button></div>
+    </div>
+    <figure class="hero-art">
+      <svg viewBox="1046 192 488 520" role="img" aria-label="The user sequence diagram for POST /orders: User calls orders, orders calls OrderService.place, which loops over OrderRepo.get, then calls OrderRepo.create and Payment.charge, and returns 201 Created."><use href="#illus-art"/></svg>
+    </figure>
+    </div>
   </section>
 
   <div class="gap">
@@ -224,6 +239,7 @@ pre.code .c { color: var(--ink-3); }
     <p class="sub">A call graph tells you what is connected. vibesequence keeps what it throws away: the order of calls, and the branch around each one.</p>
     <figure class="illus">
 <svg viewBox="0 140 1600 710" class="illus-svg" role="img" aria-label="Illustration: three Python files with numbered calls flow through vibesequence (extract, resolve, find entry points, zoom and render) into a user sequence diagram for POST /orders, where each numbered call becomes an arrow and the for loop becomes a loop box.">
+<g id="illus-art">
 <text x="60" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#2383E2" text-anchor="start" letter-spacing="1">01</text>
 <text x="90" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#5F5E5A" text-anchor="start" letter-spacing="1.2">YOUR CODE</text>
 <text x="600" y="166" font-family="'SFMono-Regular', ui-monospace, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#2383E2" text-anchor="start" letter-spacing="1">02</text>
@@ -372,6 +388,7 @@ pre.code .c { color: var(--ink-3); }
 <text x="620.4000000000001" y="812" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#9A9994" text-anchor="start">·  click a call to zoom in  ·  play it arrow by arrow</text>
 <g transform="translate(1356 790) scale(.66)" fill="none"><path d="M36 10H15a5 5 0 0 0-5 5v4a5 5 0 0 0 5 5h18a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H12" stroke="#161615" stroke-width="4.2" stroke-linecap="round"/><rect x="30" y="4" width="12" height="12" rx="3.5" fill="#161615"/><rect x="18" y="18" width="12" height="12" rx="3.5" fill="#161615"/><rect x="6" y="32" width="12" height="12" rx="3.5" fill="#161615"/></g>
 <text x="1394" y="816" font-family="'Plus Jakarta Sans', ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="21" fill="#161615" letter-spacing="-0.5"><tspan font-weight="500">Vibe</tspan><tspan font-weight="800">Sequence</tspan></text>
+</g>
 </svg>
     </figure>
     <p class="swipe">Swipe to follow the flow →</p>
@@ -391,7 +408,6 @@ pre.code .c { color: var(--ink-3); }
       <div class="col"><span class="n">play</span><h3>Step by step</h3><p>Each step shows who calls whom and the <code>file:line</code>, one click from your editor.</p></div>
       <div class="col"><span class="n">languages</span><h3>Python, TS, Go</h3><p>FastAPI, Flask, Next.js, Express, net/http, Gin, Echo, Chi, Cobra.</p></div>
     </div>
-    <figure class="media"><img src="assets/explore.gif" alt="Opening a flow, playing it step by step, switching zoom levels and zooming into a call in the vibesequence viewer" loading="lazy"></figure>
   </section>
 
   <div class="gap">
