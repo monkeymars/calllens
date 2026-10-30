@@ -8,6 +8,7 @@
   <a href="https://github.com/monkeymars/vibesequence/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="License: MIT"/></a>
   <a href="https://pepy.tech/project/vibesequence"><img src="https://img.shields.io/pepy/dt/vibesequence?color=blue&label=downloads" alt="Downloads"/></a>
   <a href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md"><img src="https://img.shields.io/badge/Docs-how%20it%20works-0b7285?style=flat&logo=readthedocs&logoColor=white" alt="Docs"/></a>
+  <a href="https://monkeymars.github.io/vibesequence/"><img src="https://img.shields.io/badge/Website-vibesequence-2383E2?style=flat" alt="Website"/></a>
 </p>
 
 Turn your codebase into **zoomable sequence diagrams** that show *when a user does X, who calls whom,
