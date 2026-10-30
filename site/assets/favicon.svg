@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <style>.m { color: #141413 } @media (prefers-color-scheme: dark) { .m { color: #ECECE8 } }</style>
+  <g class="m">
+    <path d="M36 10H15a5 5 0 0 0-5 5v4a5 5 0 0 0 5 5h18a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H12" stroke="currentColor" stroke-width="4.2" stroke-linecap="round"/>
+    <rect x="30" y="4" width="12" height="12" rx="3.5" fill="currentColor"/>
+    <rect x="18" y="18" width="12" height="12" rx="3.5" fill="currentColor"/>
+    <rect x="6" y="32" width="12" height="12" rx="3.5" fill="currentColor"/>
+  </g>
+</svg>

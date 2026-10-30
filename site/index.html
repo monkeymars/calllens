@@ -10,10 +10,10 @@
 <meta property="og:image" content="https://monkeymars.github.io/vibesequence/assets/live-diff-poster.jpg">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232383E2'/><path d='M9 9h14M9 16h14M9 23h14' stroke='white' stroke-width='2.6' stroke-linecap='round'/></svg>">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
 <style>
 /* Editorial "paper and ink": a ruled frame, a big headline, one accent. System fonts only. */
 :root {
@@ -38,8 +38,9 @@ section, header, footer { border-bottom: 1px solid var(--rule); }
 
 /* nav */
 .nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 2rem; border-bottom: 1px solid var(--rule); }
-.wordmark { font-size: 1.4rem; letter-spacing: -.035em; text-decoration: none; }
-.wordmark b { font-weight: 800; color: var(--blue); } .wordmark span { font-weight: 500; }
+.wordmark { display: inline-flex; align-items: center; gap: .55rem; font: 1.35rem var(--display); letter-spacing: -.03em; color: var(--ink); text-decoration: none; }
+.wordmark b { font-weight: 800; } .wordmark span { font-weight: 500; }
+.mark { width: 28px; height: 28px; flex: none; }
 .nav-links { display: flex; align-items: center; gap: 1.8rem; }
 .nav-links a { text-decoration: none; font-size: .98rem; }
 .nav-links a:not(.star):hover { text-decoration: underline; text-underline-offset: 4px; }
@@ -147,8 +148,9 @@ pre.code .c { color: var(--ink-3); }
 
 /* footer */
 .foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1.4rem 2rem; }
-.foot-mark { font-weight: 800; letter-spacing: -.03em; }
-.foot-mark span { font-weight: 400; color: var(--ink-2); margin-left: .6rem; letter-spacing: 0; font-size: .92rem; }
+.foot-mark { display: flex; align-items: center; gap: .9rem; }
+.foot-mark .wordmark { font-size: 1.05rem; gap: .45rem; } .foot-mark .mark { width: 20px; height: 20px; }
+.foot-mark small { color: var(--ink-2); font-size: .92rem; }
 .foot-links { display: flex; flex-wrap: wrap; gap: 1.6rem; }
 .foot-links a { color: var(--ink-2); text-decoration: none; font-size: .92rem; }
 .foot-links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
@@ -176,7 +178,7 @@ pre.code .c { color: var(--ink-3); }
 <body>
 <div class="frame">
   <header class="nav">
-    <a class="wordmark" href="./"><b>Vibe</b><span>Sequence</span></a>
+    <a class="wordmark" href="./" aria-label="VibeSequence home"><svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M36 10H15a5 5 0 0 0-5 5v4a5 5 0 0 0 5 5h18a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H12" stroke="currentColor" stroke-width="4.2" stroke-linecap="round"/><rect x="30" y="4" width="12" height="12" rx="3.5" fill="currentColor"/><rect x="18" y="18" width="12" height="12" rx="3.5" fill="currentColor"/><rect x="6" y="32" width="12" height="12" rx="3.5" fill="currentColor"/></svg><span><b>Vibe</b><span>Sequence</span></span></a>
     <nav class="nav-links">
       <a class="hide-sm" href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md">Docs</a>
       <a class="hide-sm" href="#benchmark">Benchmark</a>
@@ -295,7 +297,7 @@ vibesequence install                 <span class="c"># teach Claude Code to use 
   </section>
 
   <footer class="foot">
-    <div class="foot-mark">vibesequence<span>MIT</span></div>
+    <div class="foot-mark"><a class="wordmark" href="./"><svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M36 10H15a5 5 0 0 0-5 5v4a5 5 0 0 0 5 5h18a5 5 0 0 1 5 5v4a5 5 0 0 1-5 5H12" stroke="currentColor" stroke-width="4.2" stroke-linecap="round"/><rect x="30" y="4" width="12" height="12" rx="3.5" fill="currentColor"/><rect x="18" y="18" width="12" height="12" rx="3.5" fill="currentColor"/><rect x="6" y="32" width="12" height="12" rx="3.5" fill="currentColor"/></svg><span><b>Vibe</b><span>Sequence</span></span></a><small>MIT</small></div>
     <nav class="foot-links">
       <a href="https://github.com/monkeymars/vibesequence/blob/main/docs/how-it-works.md">Docs</a>
       <a href="https://github.com/monkeymars/vibesequence">GitHub</a>
