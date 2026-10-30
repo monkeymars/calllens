@@ -65,7 +65,7 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.03em; margin: 0; }
         transition: border-color .25s, background .25s, color .25s, box-shadow .25s; }
 .lane svg { width: 16px; height: 16px; flex: none; }
 /* the lifeline continues under each actor inside the sticky bar, so it joins the page's lifelines */
-.lane::after { content: ""; position: absolute; top: 100%; left: 50%; height: 16px; margin-left: -.75px;
+.lane::after { content: ""; position: absolute; top: 100%; left: 50%; height: 14px;   /* box bottom (50px) to bar bottom (64px) */
                border-left: 1.5px dashed var(--life); pointer-events: none; }
 .lane.you { border-color: var(--blue); background: var(--blue-soft); }
 .lane.active { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 18%, transparent); }
