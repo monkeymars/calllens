@@ -7,7 +7,7 @@
 <meta name="description" content="vibesequence reads your code and draws every route, command and handler as a zoomable sequence diagram: who calls whom, in what order. A map for you and your AI assistant.">
 <meta property="og:title" content="vibesequence: your codebase as zoomable sequence diagrams">
 <meta property="og:description" content="Who calls whom, in what order. Zoom, play and diff the flows of your code. Python, TypeScript and Go.">
-<meta property="og:image" content="https://monkeymars.github.io/vibesequence/assets/live-diff-poster.png">
+<meta property="og:image" content="https://monkeymars.github.io/vibesequence/assets/live-diff-poster.jpg">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232383E2'/><path d='M9 9h14M9 16h14M9 23h14' stroke='white' stroke-width='2.6' stroke-linecap='round'/></svg>">
@@ -104,6 +104,8 @@ h1 em { font-style: normal; color: var(--blue); }
 /* demo media */
 .media { border: 1px solid var(--rule); background: var(--paper-press); }
 .media video, .media img { display: block; width: 100%; height: auto; }
+.media figcaption code { font-size: .88em; color: var(--ink); }
+.media figcaption b { color: var(--ink); font-weight: 600; }
 .media figcaption { padding: .7rem 1rem; border-top: 1px solid var(--rule); font-size: .92rem; color: var(--ink-2); background: var(--paper); }
 .tabs { display: flex; gap: 0; margin-bottom: 1rem; border: 1px solid var(--rule); width: fit-content; }
 .tabs button { font: 600 .92rem var(--font); color: var(--ink-2); background: none; border: 0; padding: .6rem 1.1rem; cursor: pointer; }
@@ -218,8 +220,9 @@ pre.code .c { color: var(--ink-3); }
         <button role="tab" aria-selected="false" aria-controls="p-explore" id="t-explore">Explore a flow</button>
       </div>
       <figure class="media panel" id="p-diff" role="tabpanel" aria-labelledby="t-diff">
-        <video src="assets/live-diff.mp4" poster="assets/live-diff-poster.png" autoplay muted loop playsinline preload="metadata"></video>
-        <figcaption>The code changes while the viewer is open: the new step turns green, the removed one is listed, and “Play changes” walks just that.</figcaption>
+        <video src="assets/live-diff.mp4" poster="assets/live-diff-poster.jpg" autoplay muted loop playsinline preload="metadata"></video>
+        <figcaption><b>Before:</b> <code>place()</code> publishes an event. <b>The code changes</b> while the viewer is open.
+          <b>After:</b> the new <code>send_receipt</code> step turns green, the removed one is listed, and “Play changes” walks just that.</figcaption>
       </figure>
       <figure class="media panel" id="p-explore" role="tabpanel" aria-labelledby="t-explore" hidden>
         <img src="assets/explore.gif" alt="Opening a flow, playing it step by step, switching zoom levels and zooming into a call in the vibesequence viewer" loading="lazy">
